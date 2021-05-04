@@ -182,13 +182,16 @@ The only work relevant work that implements a Deflate decompressor without a mat
 
 \subsection{Open-Source Hardware Compressors and Decompressors}\label{ss:open-source_hardware_compressors_and_decompressors}
 \subsubsection{FPGA Designs}\label{sss:fpga_designs}
+Nunez-yanez created the open-source X-MatchPROvw, implementing the XMatchPro compression algorithm \cite{xmatchpro}. This hardware compressor and decompressor is a dictionary-based pattern compression technique, and the design is capable of four bytes per cycle compression and decompression throughput.
+
+Vijlbrief implements a configurable Deflate compressor and decompressor designed for FPGAs \cite{hdldeflate}. However, this design requires multiple cycles per compressed or decompressed byte, so it is not suitable for low-latency compression and decompression of memory.
 
 \subsection{Open-Source Compressor-Only Hardware}\label{ss:open-source_compressor-only_hardware}
 \subsubsection{FPGA Designs}\label{sss:fpga_designs}
+Schrittwieser implements a LZRW1 compressor core \cite{lzrw1}. This core requires two cycles per byte and does not have a matching decompressor, so it is not suitable for low-latency compression and decompression of memory.
 
 \subsection{Other Memory Compressors and Decompressors}\label{ss:other_memory_compressors_and_decompressors}
-
-\cite{compresso}
+The goals of Compresso are similar to the goals of this work: enabling low-latency memory compression to increase effective memory size \cite{compresso}. However, because Compresso only compresses blocks of 64 bytes, it is only able to achieve compression ratios of 1.85x. This makes it unsuitable for aggressive compression of memory data.
 
 
 % \section{Hardware}\label{se:hardware}
