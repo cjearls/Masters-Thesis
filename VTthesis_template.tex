@@ -193,25 +193,6 @@ Schrittwieser implements a LZRW1 compressor core \cite{lzrw1}. This core require
 \subsection{Other Memory Compressors and Decompressors}\label{ss:other_memory_compressors_and_decompressors}
 The goals of Compresso are similar to the goals of this work: enabling low-latency memory compression to increase effective memory size \cite{compresso}. However, because Compresso only compresses blocks of 64 bytes, it is only able to achieve compression ratios of 1.85x. This makes it unsuitable for aggressive compression of memory data.
 
-
-% \section{Hardware}\label{se:hardware}
-% \subsection{Hardware like Deflate}\label{ss:hardware_like_deflate}
-% These papers are hardware compression and decompression engines that are similar to our work, using an LZ-based algorithm followed by entropy encoding like Huffman \cite{microsoft, ibm}. \cite{xpress9} performs LZ77, then Huffman on an FPGA, so is very similar to algorithms like Deflate. \cite{fpgamulticoregzip} does GZIP compression on an FPGA which uses LZ77 and Huffman, but they don't say much about how they designed it or what languages they used. \cite{fpgadeflate} implements deflate on an FPGA in a manner that is tightly coupled with the CPU.\cite{aha} implements several different Gzip, Zlib, and LZS compression algorithms in hardware on a PCIe card at speeds of 10, 20, 40, and 80 Gbps. \cite{ribeiro} implements LZ77 hardware acceleration in hardware and uses this to implement Deflate, but uses the fixed, or static, Huffman encoding when doing so. Comparatively, we use dynamic Huffman encoding, which is more complex and should lead to better compression ratios. \cite{hardwarelz4} is a hardware LZ4 accelerator tested in an FPGA and implemented on a 65nm process node chip. \cite{compresso} is similar to our compression in that it compresses memory, but only compresses 64 bytes at a time, so gets very poor compression ratios.
-
-% \subsection{Hardware LZ}\label{ss:hardware_lz}
-% These papers are LZ hardware compressors and decompressors \cite{lz77fpga, lzfpga}.  \cite{lzfpga} performs compression, then decompresses and checks against the original data to be sure no errors occurred. \cite{highthroughputdeflate} does hardware Deflate compression and decompression, but their hardware uses high-level synthesis tools, so the description is actually just written in C++. \cite{xmatchpro} appears to be similar to LZ, it's dictionary-based, looks at the history, and has 4-byte patterns.
-
-% \subsection{Compression Only}\label{ss:compression_only}
-% This portion of the paper discusses relevant hardware compressors that are not matched by a hardware decompressor of the same algorithm in the same work. This means that, although compression is accelerated, some form of software decompressor is necessary to make use of the compressor design. \cite{fpgahuffmanlz77} implements Huffman compressors and LZ77 compressors in hardware on an FPGA with VHDL.  \cite{gziponachip} is a hardware implementation of Gzip on an FPGA using OpenCL and high-level synthesis tools.
-
-% \cite{lzrw1} implements an LZRW1 compressor in hardware, but the decompressor is implemented in Java. \cite{lzvlsi} implements an ASIC LZ compression chip that is scalable, but has no decompressor. \cite{fpgagzip} This is an fpga-based data compression implementation of GZip, but requires a software decompression implementation.
-% % \cite{acceleratingdatacenter} says they do compression, but don't give any details other than that it is part of the way they accelerated the Bing search engine. % This doesn't seem to add anything to our paper because they don't include any details on their implementation
-
-% \subsection{Decompression Only}\label{ss:decompression_only}
-% This portion of the paper discusses relevant hardware decompressors. These decompressors all require data to be first compressed with some kind of software compressor before they can be used.
-
-% \cite{deflatedecompression} does hardware Deflate, but only the decompression, not the compression.
-
 \chapter{Proposed Work} \label{ch:proposed_work}
 \section{Huffman Hardware Design}\label{se:huffman_hardware_design}
 The Huffman encoding hardware was the first implementation designed. This was because the end goal was to have a similar algorithm to Deflate implemented in hardware, but Huffman encoding is the most complex part of Deflate. If Huffman hardware was not feasible in hardware, it would have been better to know early on.
