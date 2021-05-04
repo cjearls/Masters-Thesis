@@ -105,47 +105,63 @@ This work attempts to address the shortcomings of existing hardware compressors 
 % 			\subsection{A sub-section} \label{ss:this_subsection}
 % 		\section{Another Section} \label{se:another_section}
 
-\chapter{Literature Review} \label{ch:related_works}
-\section{Background}\label{se:background}
-There are two primary types of lossless compression algorithms: those that alter character encoding methods and those that match patterns of characters. Although there are many examples of both compression techniques, this work will be focusing on Huffman encoding for character compression and LZ-based strategies for pattern compression. These are the most common bases in the state of the art works as well.
+\chapter{Literature Review} \label{ch:literature_review}
+\section{Compression Algorithms}\label{se:compression_algorithms}
+There are two primary types of lossless compression algorithms: those that alter character encoding methods and those that match patterns of characters. Although there are many examples of both compression techniques, this work focuses on Huffman encoding for character compression and LZ-based strategies for pattern compression. This is because they are the most common bases in the state-of-the-art for memory compression.
 
-\subsection{Huffman}\label{ss:huffman}
-Huffman's encoding achieves minimum redundancy of data by giving characters of data variable lengths \cite{huffman}. The lengths of each encoding are determined by how frequently it appears in the data being compressed. Frequently-occurring data are assigned shorter encodings, and infrequently-occurring data are assigned longer encodings. In this way, data can be optimally encoded such that no two characters' representations could be swapped to achieve a shorter encoding result. 
+\subsection{Huffman Encoding}\label{ss:huffman_encoding}
+Huffman encoding achieves minimum redundancy of data by giving characters of data variable lengths \cite{huffman}. The lengths of each encoding are determined by how frequently it appears in the data being compressed. Frequently-occurring data are assigned shorter encodings, and infrequently-occurring data are assigned longer encodings. In this way, data can be optimally encoded such that no two characters' representations could be swapped to achieve a shorter encoding result. 
+
+Huffman encoding is done in two passes. In the first pass, the number of occurrences of each data character are counted to determine their relative frequencies. Afterwards, these frequencies are used to construct a binary tree where each data character is a leaf node. The construction of this tree starts from the two least frequent characters. Every time two nodes are combined under a new parent node, the parent node's frequency becomes the sum of the frequencies of its children. This continues until a single root node encompasses the entire tree.
+
+Once the tree is constructed, the lengths and encodings of the characters can be determined. The number of bits used to represent a character is equal to its depth in the tree from the root node. The encoding of each character is determined by the traversal steps required to reach it from the root node. Every left path in the tree concatenates a "0" to the binary encoding of the character, and each right path concatenates a "1" to the binary encoding.
+
+Finally, once each of the leaf nodes has been given an encoding, the second pass can encode the data. For each character of the input data, the second pass looks up its new encoding and outputs this new encoding. This continues until every character of the input has been encoded.
+
+To decode Huffman-encoded data, only the original Huffman tree is needed. Then, the decompressor can simply traverse the Huffman tree for each bit in the encoded data, stopping and starting from the root node every time a leaf is reached. In many cases, the original Huffman tree is stored in canonical Huffman form to save space, but because this canonical form is not used for the hardware compressor and decompressor of this work, it is not relevant.
 
 \subsection{LZ77}\label{ss:lz77}
-LZ77-based compression techniques involve a moving window of character history as the data to be compressed is fed through the compressor. When patterns from the character history buffer are repeated in input data, in their place a pointer to the original pattern's location is used, reducing the total size of the data in many cases \cite{lz77}. The decompressor does the opposite, loading data into a buffer to be referenced from and, when pointers are received from the compressed data, the decompressor looks up the pattern in the history to determine what the uncompressed representation should be.
+LZ77-based compression techniques use an algorithm pioneered by Abraham Lempel and Jacob Ziv in 1977 \cite{lz77}. When patterns from the character history buffer are repeated in input data, in their place a pointer to the original pattern's location is used, reducing the total size of the data in many cases \cite{lz77}. The decompressor does the opposite, loading data into a buffer to be referenced from and, when pointers are received from the compressed data, the decompressor looks up the pattern in the history to determine what the uncompressed representation should be.
 
 \subsection{LZ78}\label{ss:lz78}
 LZ78-based compression techniques instead use a continually-generated dictionary for compression. At the beginning of a sequence of data, the compressor and decompressor start with only literal characters \cite{lz78}. Anytime a sequence of characters of length L that has not been logged in the dictionary is found in the data, the compressor outputs the index of the dictionary entry that matches the first L-1 characters, then the first characters of the following dictionary is the Lth character in the new pattern. In this way, both the compressor and decompressor build progressively longer dictionaries of patterns without the need to transmit a separate dictionary as metadata.
 
-\section{Software}\label{se:software}
-This section is a discussion of all relevant software compression algorithms based on LZ77, LZ78, Huffman, or a combination of them. Something important to keep in mind is that many specifications and implementations are open-source, so anyone can use them or implement their own versions.
+\subsection{Deflate}\label{ss:deflate}
 
-\subsection{LZ77}\label{ss:lz77_software}
-Here we will cite all of the LZ77-based compression works, including LZ4, LZO, and LZMA.
 
-\subsection{LZ78}\label{ss:lz78_software}
-Here we will cite all of the LZ78-based compression works, including LZW.
+\section{Existing Hardware Compressors and Decompressors}\label{se:existing_hardware_compressors_and_decompressors}
+\subsection{Complete DEFLATE-Like Hardware Compressors and Decompressors}\label{ss:complete_deflate-like_hardware_compressors_and_decompressors}
 
-\subsection{Combinations of Huffman and LZ77}\label{ss:combinations_of_huffman_and_lz77}
-Here, we will cite all of the works based on a combination of huffman and LZ77-based algorithms. This includes Deflate, GZIP, zlib, and Xpress \cite{deflate, gzip, zlib, xpress}.
 
-\section{Hardware}\label{se:hardware}
-\subsection{Hardware like Deflate}\label{ss:hardware_like_deflate}
-These papers are hardware compression and decompression engines that are similar to our work, using an LZ-based algorithm followed by entropy encoding like Huffman \cite{microsoft, ibm}. \cite{xpress9} performs LZ77, then Huffman on an FPGA, so is very similar to algorithms like Deflate. \cite{fpgamulticoregzip} does GZIP compression on an FPGA which uses LZ77 and Huffman, but they don't say much about how they designed it or what languages they used. \cite{fpgadeflate} implements deflate on an FPGA in a manner that is tightly coupled with the CPU.\cite{aha} implements several different Gzip, Zlib, and LZS compression algorithms in hardware on a PCIe card at speeds of 10, 20, 40, and 80 Gbps. \cite{ribeiro} implements LZ77 hardware acceleration in hardware and uses this to implement Deflate, but uses the fixed, or static, Huffman encoding when doing so. Comparatively, we use dynamic Huffman encoding, which is more complex and should lead to better compression ratios. \cite{hardwarelz4} is a hardware LZ4 accelerator tested in an FPGA and implemented on a 65nm process node chip. \cite{compresso} is similar to our compression in that it compresses memory, but only compresses 64 bytes at a time, so gets very poor compression ratios.
+% \section{Software}\label{se:software}
+% This section is a discussion of all relevant software compression algorithms based on LZ77, LZ78, Huffman, or a combination of them. Something important to keep in mind is that many specifications and implementations are open-source, so anyone can use them or implement their own versions.
 
-\subsection{Hardware LZ}\label{ss:hardware_lz}
-These papers are LZ hardware compressors and decompressors \cite{lz77fpga, lzfpga}.  \cite{lzfpga} performs compression, then decompresses and checks against the original data to be sure no errors occurred. \cite{highthroughputdeflate} does hardware Deflate compression and decompression, but their hardware uses high-level synthesis tools, so the description is actually just written in C++. \cite{xmatchpro} appears to be similar to LZ, it's dictionary-based, looks at the history, and has 4-byte patterns. \cite{ibmoptimization} is an optimization to parallelize in hardware LZ compression with a smaller reduction in compression ratio by sharing histories between the different threads.
+% \subsection{LZ77}\label{ss:lz77_software}
+% Here we will cite all of the LZ77-based compression works, including LZ4, LZO, and LZMA.
 
-\subsection{Compression Only}\label{ss:compression_only}
-This portion of the paper discusses relevant hardware compressors that are not matched by a hardware decompressor of the same algorithm in the same work. This means that, although compression is accelerated, some form of software decompressor is necessary to make use of the compressor design. \cite{fpgahuffmanlz77} implements Huffman compressors and LZ77 compressors in hardware on an FPGA with VHDL.  \cite{gziponachip} is a hardware implementation of Gzip on an FPGA using OpenCL and high-level synthesis tools.
+% \subsection{LZ78}\label{ss:lz78_software}
+% Here we will cite all of the LZ78-based compression works, including LZW.
 
-\cite{acceleratingdatacenter} says they do compression, but don't give any details other than that it is part of the way they accelerated the Bing search engine. \cite{lzrw1} implements an LZRW1 compressor in hardware, but the decompressor is implemented in Java. \cite{lzvlsi} implements an ASIC LZ compression chip that is scalable, but has no decompressor. \cite{fpgagzip} This is an fpga-based data compression implementation of GZip, but requires a software decompression implementation.
+% \subsection{Combinations of Huffman and LZ77}\label{ss:combinations_of_huffman_and_lz77}
+% Here, we will cite all of the works based on a combination of huffman and LZ77-based algorithms. This includes Deflate, GZIP, zlib, and Xpress \cite{deflate, gzip, zlib, xpress}.
 
-\subsection{Decompression Only}\label{ss:decompression_only}
-This portion of the paper discusses relevant hardware decompressors. These decompressors all require data to be first compressed with some kind of software compressor before they can be used.
+% \section{Hardware}\label{se:hardware}
+% \subsection{Hardware like Deflate}\label{ss:hardware_like_deflate}
+% These papers are hardware compression and decompression engines that are similar to our work, using an LZ-based algorithm followed by entropy encoding like Huffman \cite{microsoft, ibm}. \cite{xpress9} performs LZ77, then Huffman on an FPGA, so is very similar to algorithms like Deflate. \cite{fpgamulticoregzip} does GZIP compression on an FPGA which uses LZ77 and Huffman, but they don't say much about how they designed it or what languages they used. \cite{fpgadeflate} implements deflate on an FPGA in a manner that is tightly coupled with the CPU.\cite{aha} implements several different Gzip, Zlib, and LZS compression algorithms in hardware on a PCIe card at speeds of 10, 20, 40, and 80 Gbps. \cite{ribeiro} implements LZ77 hardware acceleration in hardware and uses this to implement Deflate, but uses the fixed, or static, Huffman encoding when doing so. Comparatively, we use dynamic Huffman encoding, which is more complex and should lead to better compression ratios. \cite{hardwarelz4} is a hardware LZ4 accelerator tested in an FPGA and implemented on a 65nm process node chip. \cite{compresso} is similar to our compression in that it compresses memory, but only compresses 64 bytes at a time, so gets very poor compression ratios.
 
-\cite{deflatedecompression} does hardware Deflate, but only the decompression, not the compression.
+% \subsection{Hardware LZ}\label{ss:hardware_lz}
+% These papers are LZ hardware compressors and decompressors \cite{lz77fpga, lzfpga}.  \cite{lzfpga} performs compression, then decompresses and checks against the original data to be sure no errors occurred. \cite{highthroughputdeflate} does hardware Deflate compression and decompression, but their hardware uses high-level synthesis tools, so the description is actually just written in C++. \cite{xmatchpro} appears to be similar to LZ, it's dictionary-based, looks at the history, and has 4-byte patterns.
+
+% \subsection{Compression Only}\label{ss:compression_only}
+% This portion of the paper discusses relevant hardware compressors that are not matched by a hardware decompressor of the same algorithm in the same work. This means that, although compression is accelerated, some form of software decompressor is necessary to make use of the compressor design. \cite{fpgahuffmanlz77} implements Huffman compressors and LZ77 compressors in hardware on an FPGA with VHDL.  \cite{gziponachip} is a hardware implementation of Gzip on an FPGA using OpenCL and high-level synthesis tools.
+
+% \cite{lzrw1} implements an LZRW1 compressor in hardware, but the decompressor is implemented in Java. \cite{lzvlsi} implements an ASIC LZ compression chip that is scalable, but has no decompressor. \cite{fpgagzip} This is an fpga-based data compression implementation of GZip, but requires a software decompression implementation.
+% % \cite{acceleratingdatacenter} says they do compression, but don't give any details other than that it is part of the way they accelerated the Bing search engine. % This doesn't seem to add anything to our paper because they don't include any details on their implementation
+
+% \subsection{Decompression Only}\label{ss:decompression_only}
+% This portion of the paper discusses relevant hardware decompressors. These decompressors all require data to be first compressed with some kind of software compressor before they can be used.
+
+% \cite{deflatedecompression} does hardware Deflate, but only the decompression, not the compression.
 
 \chapter{Proposed Work} \label{ch:proposed_work}
 \section{Huffman Hardware Design}\label{se:huffman_hardware_design}
