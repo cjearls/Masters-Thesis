@@ -148,7 +148,7 @@ When compressing with LZ78, every sequence of inputs is added to a dictionary. I
 Deflate is a combination of LZ77 and Huffman encoding \cite{deflate}. By combining these two algorithms, Deflate is able to take advantage both of the pattern matching of LZ77 and the entropy encoding of Huffman encoding. Because it takes advantage of both, its compression ratios are higher than either individually. These high compression ratios make it a good candidate for memory compression.
 
 \section{Existing Hardware Compressors and Decompressors}\label{se:existing_hardware_compressors_and_decompressors}
-\subsection{Complete DEFLATE-Like Hardware Compressors and Decompressors}\label{ss:complete_deflate-like_hardware_compressors_and_decompressors}
+\subsection{Proprietary Complete DEFLATE-Like Hardware Compressors and Decompressors}\label{ss:complete_deflate-like_hardware_compressors_and_decompressors}
 
 \subsubsection{ASIC Designs}\label{sss:asic_designs}
 IBM has created a Deflate compression and decompression engine that is included in both their POWER9 and z15 processors \cite{ibm}. IBM's implementation is capable of handling data at a rate of 8 bytes/clock, allowing for very high compression and decompression bandwidth \cite{ibm}. The IBM design uses completely accurate near-history CAM and a pseudo-CAM for the older sliding window history to limit CAM area. Additionally, IBM's Huffman encoder builds dynamic trees, unlike many other works that build in a static Huffman encoding to remove the required tree-building process.
@@ -163,25 +163,33 @@ Microsoft also implements its own Xpress9 compression algorithm \cite{xpress9}. 
 
 \subsection{Proprietary Compressor-Only Hardware}\label{proprietary_compressor-only_hardware}
 \subsubsection{ASIC Designs}\label{sss:asic_designs}
+Lee et al. verify an LZ4 compressor design in an FPGA, then fabricate it on a 65 nm process node \cite{hardwarelz4}. However, this design is limited to patterns of only 31 bytes, which limits the compression ratios that it can achieve.
 
 \subsubsection{FPGA Designs}\label{sss:fpga_designs}
+
+Rigler et al. implements separate hardware compressors that use Huffman and LZ77 \cite{fpgahuffmanlz77}. The designs are separate, but the authors claim that it is possible to merge the designs together to implement GZIP. Unlike many designs, the Huffman compressor of this design supports dynamic Huffman encoding, which significantly complicates the hardware.
+
+Abdelfattah et al. use OpenCL to implement GZIP on an Altera FPGA \cite{gziponachip}. This GZIP compressor supports dynamic Huffman encoding and achieves compression ratios over 2x. This design is implemented with high-level synthesis tools, which have a reputation for producing slow, inefficient designs. However, the OpenCL implementation is shown to be very close to a hand-programmed Verilog design in area, speed, and compression ratio.
+
 Luo et al. implement a multi-core GZIP compressor for use with the Hadoop Distributed File System \cite{hdfsgzip}. This work uses static Huffman encoding. The hardware implementation enables a speedup of 70x compared to software compression, which doubles the performance of HDFS.
 
 Identifying that FPGA compressors are limited by CPU-FPGA communication speed, Qiao et al. implement a high-throughput Deflate compression accelerator \cite{fpgadeflate}. Their design uses the extremely high-speed communication of Intel's HARPv2 platform to overcome existing communication bottlenecks for FPGAs. Like many other compressors, they modify the hash table to allow it to work in parallel and use a static Huffman tree to allow Huffman to easily pipeline with the LZ77 compressor.
 
 Ribeiro implements an LZ77 compressor and a static Huffman encoder on an FPGA with a general-purpose CPU that passes data between them and manages them \cite{ribeiro}. The Zynq devices that the design is implemented on is limited to 123 MiB/s by its CPU, and achieves a speedup of 1.5x over the Zynq ARM processor alone.
 
-% \section{Software}\label{se:software}
-% This section is a discussion of all relevant software compression algorithms based on LZ77, LZ78, Huffman, or a combination of them. Something important to keep in mind is that many specifications and implementations are open-source, so anyone can use them or implement their own versions.
+\subsection{Proprietary Decompressor-Only Hardware}\label{proprietary_decompressor-only_hardware}
+The only work relevant work that implements a Deflate decompressor without a matching compressor is done by Ledwon et al. \cite{deflatedecompression}. This work is implemented in C++ and synthesized with Xilinx's high-level synthesis tools. The decompressor is fully Deflate-compliant, so it supports many features that are often deemed unnecessary for hardware compressors or decompressors.
 
-% \subsection{LZ77}\label{ss:lz77_software}
-% Here we will cite all of the LZ77-based compression works, including LZ4, LZO, and LZMA.
+\subsection{Open-Source Hardware Compressors and Decompressors}\label{ss:open-source_hardware_compressors_and_decompressors}
+\subsubsection{FPGA Designs}\label{sss:fpga_designs}
 
-% \subsection{LZ78}\label{ss:lz78_software}
-% Here we will cite all of the LZ78-based compression works, including LZW.
+\subsection{Open-Source Compressor-Only Hardware}\label{ss:open-source_compressor-only_hardware}
+\subsubsection{FPGA Designs}\label{sss:fpga_designs}
 
-% \subsection{Combinations of Huffman and LZ77}\label{ss:combinations_of_huffman_and_lz77}
-% Here, we will cite all of the works based on a combination of huffman and LZ77-based algorithms. This includes Deflate, GZIP, zlib, and Xpress \cite{deflate, gzip, zlib, xpress}.
+\subsection{Other Memory Compressors and Decompressors}\label{ss:other_memory_compressors_and_decompressors}
+
+\cite{compresso}
+
 
 % \section{Hardware}\label{se:hardware}
 % \subsection{Hardware like Deflate}\label{ss:hardware_like_deflate}
