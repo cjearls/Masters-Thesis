@@ -11,13 +11,15 @@
 %
 %In addition to the standard formatting options, the following options are defined for the VTthesis class: proposal, prelim, doublespace, draft. 
 
-\documentclass[doublespace,draft,nopageskip]{VTthesis} % nopageskip - Removes arbitrary blank pages.
+% \documentclass[doublespace,draft,nopageskip]{VTthesis} % nopageskip - Removes arbitrary blank pages.
+% This turns off draft mode
+\documentclass[doublespace,nopageskip]{VTthesis}
 
 % Using the following header instead will create a draft copy of your thesis
-%\documentclass[doublespace,draft]{VTthesis}
+% \documentclass[doublespace,draft]{VTthesis}
 
 % Title of your thesis
-\title{Open-Source Parameterized Low-Latency Aggressive Hardware Compressor and Decompressor for Memory Compression}
+\title{Open-Source Parameterized Low-Latency Aggressive Hardware Compressors and Decompressors for Memory Compression}
 
 % You should include 3-5 keywords, separated by commas
 \keywords{compression, decompression, accelerator, hardware, parameterized, low-latency}
@@ -47,7 +49,7 @@
 
 % The dedication and acknowledgement pages are optional. Comment them out to remove them.
 \dedication{For Alfie, the smartest, happiest dog a man could ask for}
-\acknowledge{This is where you put your acknowledgments.}
+\acknowledge{I would like to thank my lovely wife, Emilie, for her support while I performed this research. I would also like to thank my family and friends for their support. I also want to thank my advisors for their advice and guidance throughout my academic career.}
 
 % The abstract is required.
 \abstract{In recent years, memory has shown to be a constraining factor in many workloads. Memory is an expensive necessity in many situations, from embedded devices with a few kilobytes of SRAM to warehouse-scale computers with thousands of terabytes of DRAM. Memory compression has existed in all major operating systems for many years. However, while faster than swapping to a disk, memory compression adds latency to data read operations. Companies and research groups have investigated hardware compression to mitigate these problems. Still, open-source low-latency hardware compressors and decompressors do not exist; as such, every group that studies hardware compression is forced to implement it. Importantly, because the devices that can benefit from memory compression vary so widely, there is no single solution to address all devices' area, latency, power, and bandwidth requirements. This work intends to address the many issues with hardware compressors and decompressors. This work implements hardware accelerators for three popular compression algorithms, LZ77, LZW, and Huffman encoding. Each implementation includes a compressor and decompressor, and all designs are entirely parameterized. All of the designs are open-source under a permissive license. Finally, configurations of the work can achieve decompression latencies under one microsecond and compression ratios comparable to software compression algorithms. {\color{red} replace this with average latencies from simulation} and compression ratios comparable to software compression algorithms.}
@@ -124,7 +126,7 @@ There are two primary types of lossless compression algorithms: those that alter
 \subsection{Huffman Encoding}\label{ss:huffman_encoding}
 Huffman encoding achieves minimum redundancy of data by giving characters of data variable lengths \cite{huffman}. The lengths of each encoding are determined by how frequently it appears in the data being compressed. Frequently-occurring data are assigned shorter encodings, and infrequently-occurring data are assigned longer encodings. In this way, data can be optimally encoded such that no two characters' representations could be swapped to achieve a shorter encoding result. 
 
-Huffman encoding is done in two passes. In the first pass, the number of occurrences of each data character are counted to determine their relative frequencies. Afterwards, these frequencies are used to construct a binary tree where each data character is a leaf node. The construction of this tree starts from the two least frequent characters. Every time two nodes are combined under a new parent node, the parent node's frequency becomes the sum of the frequencies of its children. This continues until a single root node encompasses the entire tree.
+Static Huffman encoding uses a pre-made Huffman tree to encode the data. However, dynamic Huffman encoding is done in two passes. In the first pass, the number of occurrences of each data character are counted to determine their relative frequencies. Afterwards, these frequencies are used to construct a binary tree where each data character is a leaf node. The construction of this tree starts from the two least frequent characters. Every time two nodes are combined under a new parent node, the parent node's frequency becomes the sum of the frequencies of its children. This continues until a single root node encompasses the entire tree.
 
 Once the tree is constructed, the lengths and encodings of the characters can be determined. The number of bits used to represent a character is equal to its depth in the tree from the root node. The encoding of each character is determined by the traversal steps required to reach it from the root node. Every left path in the tree concatenates a "0" to the binary encoding of the character, and each right path concatenates a "1" to the binary encoding.
 
@@ -159,7 +161,7 @@ The AHA Products Group sells multiple PCIe cards that implement GZIP, which uses
 
 Microsoft implements a compressor and decompressor capable of DEFLATE \cite{microsoft}. The LZ77 compression of this DEFLATE accelerator is slightly modified to allow LZ77 to be executed in parallel, and the Huffman encoder and decoder uses a static Huffman tree. This design also utilizes over 20 pipeline stages to enable its high clock speeds on an FPGA.
 
-Microsoft also implements its own Xpress9 compression algorithm \cite{xpress9}. Xpress9 is very similar to Deflate, with an LZ77 stage and a Huffman stage. This design is intended to accelerate file compression and decompression in large-scale storage servers. Like Microsoft's other compressor and decompressor, this design processes multiple bytes in parallel to improve the bandwidth of the design. 7 of this design on an FPGA are able to support up to 128 threads of data at 2.4Gbps.
+Microsoft also implements its own Xpress9 compression algorithm \cite{xpress9}. Xpress9 is very similar to Deflate, with an LZ77 stage and a Huffman stage. This design is intended to accelerate file compression and decompression in large-scale storage servers. Like Microsoft's other compressor and decompressor, this design processes multiple bytes in parallel to improve the bandwidth of the design. However, unlike Microsoft's Deflate implementation, the Xpress9 design uses a Nios II FPGA soft-core to compute the Huffman encoding. 7 of this design on an FPGA are able to support up to 128 threads of data at 2.4Gbps.
 
 \subsection{Proprietary Compressor-Only Hardware}\label{proprietary_compressor-only_hardware}
 \subsubsection{ASIC Designs}\label{sss:asic_designs}
@@ -184,7 +186,14 @@ The only work relevant work that implements a Deflate decompressor without a mat
 \subsubsection{FPGA Designs}\label{sss:fpga_designs}
 Nunez-yanez created the open-source X-MatchPROvw, implementing the XMatchPro compression algorithm \cite{xmatchpro}. This hardware compressor and decompressor is a dictionary-based pattern compression technique, and the design is capable of four bytes per cycle compression and decompression throughput.
 
-Vijlbrief implements a configurable Deflate compressor and decompressor designed for FPGAs \cite{hdldeflate}. However, this design requires multiple cycles per compressed or decompressed byte, so it is not suitable for low-latency compression and decompression of memory.
+Vijlbrief implements a configurable Deflate compressor and decompressor designed for FPGAs \cite{hdldeflate}. However, this design requires multiple cycles per compressed or decompressed byte, so it is not suitable for low-latency compression and decompression of memory. Additionally, although the HDL-deflate design is partially parameterized, it has many fewer "knobs" for parameterization than this work, as can be seen in Figure \ref{fig:open-source_parameterization_comparison}.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.44]{Open-Source Parameterization Comparison.png}
+	\caption{Open-Source Parameterization Comparison}
+	\label{fig:open-source_parameterization_comparison}
+\end{figure}
 
 \subsection{Open-Source Compressor-Only Hardware}\label{ss:open-source_compressor-only_hardware}
 \subsubsection{FPGA Designs}\label{sss:fpga_designs}
@@ -193,11 +202,15 @@ Schrittwieser implements a LZRW1 compressor core \cite{lzrw1}. This core require
 \subsection{Other Memory Compressors and Decompressors}\label{ss:other_memory_compressors_and_decompressors}
 The goals of Compresso are similar to the goals of this work: enabling low-latency memory compression to increase effective memory size \cite{compresso}. However, because Compresso only compresses blocks of 64 bytes, it is only able to achieve compression ratios of 1.85x. This makes it unsuitable for aggressive compression of memory data.
 
-\chapter{Proposed Work} \label{ch:proposed_work}
-\section{Huffman Hardware Design}\label{se:huffman_hardware_design}
-The Huffman encoding hardware was the first implementation designed. This was because the end goal was to have a similar algorithm to Deflate implemented in hardware, but Huffman encoding is the most complex part of Deflate. If Huffman hardware was not feasible in hardware, it would have been better to know early on.
+\chapter{My Work} \label{ch:my_work}
+My work is comprised of three separate pairs of compressors and decompressors. The first implements a heavily modified Huffman encoding, the second implements a very slightly modified LZW, and the last implements a modified LZ77. Every part of each design is completely parameterized and can be easily configured through a CSV file. Additionally, the designs all communicate with simple ready-valid interfaces. Finally, the entire design is open-source under a permissive license. This makes the design very easy to download, configure, generate, and incorporate into a larger design.
 
-The Huffman hardware has a number of easily-adjusted parameters that are read from a text file when the hardware is generated. These values, along with a typical value for them, are shown in table \ref{tab:huffman-configuration-table}.
+\section{Design Details}\label{se:design_details}
+This section of the paper describes the high-level design of each of the compressors and decompressors, the modifications to the algorithms used, and the motivations for the changes. Information about the low-level implementation details of the design is included in a later section.
+
+\subsection{Huffman}\label{ss:huffman}
+\subsubsection{Compressor}\label{sss:compressor}
+The Huffman compressor is a fully parameterized hardware compressor implementation. The parameters of the design, along with the typical values chosen for them, are shown in \ref{tab:huffman-configuration-table}. The Huffman compressor supports dynamic Huffman encoding, so instead of simply translating input data with a static lookup table, it performs significant computation on the input data. This allows it to have a higher compression ratio for most workloads than would be possible with a static table.
 
 \begin{table}[htb]
 	\centering
@@ -234,73 +247,316 @@ The Huffman hardware has a number of easily-adjusted parameters that are read fr
 	\label{tab:huffman-configuration-table}
 \end{table}
 
-\subsection{Changes to Standard Huffman Compression}\label{ss:changes_to_standard_huffman_compression}
-A number of changes have been made to what would be a standard Huffman compression implementation to reduce the area and latency of the design and improve the maximum clock frequency of the design. In this section, the changes and the motivations to make them will be discussed in detail.
+Another benefit of the Huffman compressor design is its modularity. Because Huffman compression requires many different steps, every stage of the process has been separated into its own module. Thanks to this modularity, single components of the design can be modified or replaced without affecting the rest of the design.
 
-Standard software implementations of Huffman compression transmit the encodings in the Huffman tree from the compressor to the decompressor in what is called a "canonical" Huffman tree. This in canonical tree is the information necessary for the decompressor to determine the correct encoding and length for each character used by the compressor. Although it results in a small metadata size, it requires a substantial amount of area for the decompressor to rebuild the Huffman tree and makes it difficult to achieve high clock speeds. For these reasons, the Huffman hardware design uses a plain text encoding of metadata information, with each character requiring the same number of bits for the character itself, its encoding, and the length of its encoding. This results in a significantly simpler decompressor design which is capable of higher clock speeds and smaller area, but also results in worse compression ratios. However, the compression ratios will be improved by later optimizations.
+The first, most significant difference between this hardware Huffman compressor and a standard implementation is the size of the Huffman tree. This design uses a truncated Huffman tree, meaning only the most frequently occurring characters are used in the Huffman tree that is generated. The number of characters allowed in the Huffman tree is controlled by the "characters in the Huffman tree" parameter. The remainder of the characters are represented with an escape character that is used to signal that a literal character, not character encodings, follow. This escape character adds a small amount of compression overhead, but because it is only used for the least frequently occurring characters, the overhead is not significant in most cases.
 
-Because each character of the new Huffman tree format takes a significant number of bits to transmit, it makes sense to attempt to reduce the number of characters used. A beneficial feature of Huffman that allows for this is that Huffman takes advantage of a few short, very frequently used characters, and represents the remaining characters that do not occur very frequently with longer bit sequences. Because of this, it was decided to use only the most frequent characters, the number of which is controlled by the "characters in the Huffman tree" parameter. In this way, instead of transmitting 256 encodings for an 8-bit character Huffman hardware implementation, only 16 characters and their encodings need to be transmitted. To accomplish this, if there are more than "characters in the Huffman tree" characters in the input data, the least frequently occurring data is represented by an escape character. When the escape character is seen by the decompressor, the next "bits in a character" bits are taken as a literal character, not an encoding. This allows for a truncated version of the Huffman tree to be used with negligible effects on the compression ratio of the data, greatly reducing the size of the metadata and improving the overall compression ratio when the metadata is included.
+Similarly, this compression implementation is able to normalize Huffman trees to a chosen height. While normally, a Huffman tree would have a worst-case depth equal to the number of characters in the tree, this implementation is able to further reduce this worst-case depth to be equal to the "maximum allowed bits in a codeword" parameter. In this way, the amount of hardware can be reduced by limiting the total number of bits of a codeword in the encoding. This normalization has a price. Because there is a limited encoding space, sometimes, there is not room to reduce the depth of a character to the depth desired. In these cases, characters less than this depth are pushed deeper, opening up additional room in the encoding space, until all characters can be represented correctly. This also has a small impact on the compression ratio of the design, because the characters that are moved in the tree to generate more encoding space are still some of the least frequently occurring characters, so slightly lengthening them often does not make much of a difference.
 
-An additional measure to shrink the size of the metadata is called tree normalization. When creating a Huffman tree, the number of characters in the tree is also the worst-case tree depth. both to reduce metadata and to reduce the hardware needed in the compressor and decompressor by reducing the maximum length of an encoding, the worst-case tree depth can be reduced by tree normalization. When normalizing a Huffman tree, any characters that are deeper than depth "maximum allowed bits in a codeword" are instead set to a depth of "maximum allowed bits in a codeword". However, because the amount of space in the encoding space for Huffman compression is equal to the two to the exponent of the number of bits in the longest codeword, and each character takes up two to the exponent of the the maximum number of bits in an encoding minus the number of bits in its encoding, this method can cause there to be less space than is necessary in the encoding space. When this occurs, characters that take up fewer bits are forced to be represented by more bits, freeing up encodings in the encoding space, until there is room for every character to be encoded.
+Additionally, most software Huffman compressors represent the Huffman tree in canonical Huffman tree form. This is a special format that reduces the size of the tree. However, this design uses a plain text Huffman tree. In this tree, each character of the tree has its length, its encoding, and the actual character data. A plain text Huffman tree is used for two reasons: first, the design uses fewer characters than most designs, and second, canonical Huffman trees are more complicated to parse than plain text. The first reason means that not using a canonical form for the tree does not affect this design as much as it would affect a design that used usual Huffman algorithm. The second reason means that the decompressor can be significantly faster, because it needs to do much less parsing and computation to determine what the Huffman tree looks like. 
 
-Finally, although most of the Huffman compression and decompression algorithm is sequential, there are two parts that can be done in parallel: counting character frequencies and encoding or decoding the data. To allow for lower latency designs at a higher area cost, both of these components of the design have been individually parameterized so that their latencies can be indirectly controlled.
+Finally, this Huffman compressor has two configurable options for exploiting parallelism: the character frequency counting and the encoding. Both of these can be configured with parameters, allowing the design to be optimized for extreme bandwidth and low-latency or to be optimized for area at the cost of latency and bandwidth.
 
-\subsection{Compressor}\label{ss:huffman_hardware_compressor}
+\subsubsection{Decompressor}\label{sss:decompressor}
+Compared to the compressor, the Huffman decompressor is very simple. It uses all of the same parameters as the Huffman compressor. It contains a simple state machine that controls the reading of Huffman tree data into internal lookup tables. Once this is completed, for each parallel encoder in the compressor, there is a parallel decoder that searches for its input data in the internal lookup tables. Each decoder is capable of a steady one byte per clock cycle, so its throughput is nearly perfectly scalable with the compression parallelism.
+
+\subsection{LZW}\label{ss:lzw}
+\subsubsection{Compressor}\label{sss:compressor}
+The LZW compressor and decompressor are very close to functioning exactly like LZW. Like the other designs, the LZW compressor and decompressor are fully parameterized. Parameters and their typical values are listed in \ref{tab:lzw-configuration-table}. The LZW compressor streams in one character per cycle and adds it into a buffer to match against existing patterns in the dictionary. Once a pattern no longer matches anything in the dictionary, the last pattern match is sent to the output, and all but the last byte of the pattern are shifted out of the pattern buffer. The pattern buffer is built up again, repeating this cycle until there are no more characters to be compressed.
+
+\begin{table}[htb]
+	\centering
+	\caption{Configurable LZW Parameters and their typical values.}
+	\begin{tabular}{|c|c|}
+	    \hline
+	    Parameter & Typical Value \\
+	    \hline
+	    character bits & 8 \\
+	    \hline
+	    maximum characters in a sequence & 16 \\
+	    \hline
+	    maximum elements in the dictionary & 768 \\ 
+	    \hline
+	    enable debugging statistics & false \\
+	    \hline
+	\end{tabular}
+	\label{tab:lzw-configuration-table}
+\end{table}
+
+The only differences compared to a software LZW implementation are limitations of hardware: there is a limit to the size of the pattern buffer and to the number of entries in the dictionary. If the dictionary is full of patterns, no new patterns will be added, but the hardware can continue to compress as normal. And if a pattern fills the entire pattern buffer, further instances of it will not continue to be added to the dictionary. Other than that, the LZW hardware compressor is normal.
+
+\subsubsection{Decompressor}\label{sss:decompressor}
+The decompressor is even simpler than the compressor. Every time it reads an input, it outputs the resulting dictionary entry, and adds a new item to the dictionary based on the last pattern and the first byte of the current pattern. Like the compressor, it only avoids adding an element to the dictionary if the dictionary is full or the pattern is already as long as it can become.
+
+\subsection{LZ77}\label{ss:lz77}
+\subsubsection{Compressor}\label{sss:compressor}
+The LZ77 compressor and decompressor hardware mostly implements its algorithm unchanged. As with the other designs, it is fully parameterized, and the design parameters and typical values can be found in \ref{tab:lz77-configuration-table}. The major difference between this LZ77 implementation and the normal LZ77 algorithm is that this implementation always selects the first, longest CAM match, and can only match up to "CAM max pattern length" characters in the CAM.
+
+\begin{table}[htb]
+	\centering
+	\caption{Configurable LZ77 Parameters and their typical values.}
+	\begin{tabular}{|c|c|}
+	    \hline
+	    Parameter & Typical Value \\
+	    \hline
+	    Character bits & 8 \\
+	    \hline
+	    CAM characters & 4096 \\
+	    \hline
+	    CAM max pattern length & 16 \\
+	    \hline
+	    Max pattern length & 266 \\ 
+	    \hline
+	    Escape character & 103 \\ 
+	    \hline
+	    Decompressor max characters out & 1\\
+	    \hline
+	\end{tabular}
+	\label{tab:lz77-configuration-table}
+\end{table}
+
+The Huffman compressor reads each byte into a buffer of size "CAM max pattern length". Once this buffer is full, the pattern is searched in a CAM which returns the longest, first occurrence and the length of the occurrence. If the length of the occurrence is less than "CAM max pattern length" but equal to or greater than the number of bytes needed to encode a pattern, the CAM outputs a pattern instead of the literal bytes. If the length is the maximum, then the state of the state machine changes, and each byte after the pattern is checked against the input bytes. This continues until the bytes no longer match or the length reaches "Max pattern length". Otherwise, the first character in the buffer is output as a literal character, and the pattern buffer shifts in a new value from the input.
+
+Compressed data always follows the same format. First, the escape character value appears, then a bit that is negated from the most significant bit of the escape character, then the pointer to where in the CAM the data is, then the length of the data. If the length of the data exceeds the value that can be shown by one character of "Character bits" width, then another character of the same width is added to the encoding after that, until the "Max pattern length" is reached or this is terminated by a value that is less than the maximum possible value. However, this means that escape characters cannot be encoded properly, so two escape characters in a row encodes a single literal value of the escape character. The negated escape character bit in the encoded data format ensures that encoded data is not mistaken for two escape characters in a row.
+
+The above information about the encoding for patterns does not make any assumptions on the size of a character or the size of a pattern. This is because the design does not either. The design can be generated for any configuration, and the encoding of patterns in the design will be adjusted to reflect the configuration.
+
+\subsubsection{Decompressor}\label{sss:decompressor}
+The decompressor for the LZ77 hardware, like the other decompressors, is much simpler than the compressor. It reads in multiple bytes at a time, and if the first byte is a literal, it outputs a single byte corresponding to that literal. If the input is a pattern encoding, the decompressor transitions to a state where it outputs "Decompressor max characters out" characters from the history every cycle until it has exhausted all characters in the pattern, then goes back to reading the initial state, ready to read more data.
+
+\section{Implementation Details}\label{se:design_details}
+This section of the paper describes the low-level implementation details of each of the compressors and decompressors and the reasoning for those implementations.
+
+\subsection{Huffman}\label{ss:huffman}
+\subsubsection{Compressor}\label{sss:compressor}
 Huffman encoding is the most complicated of the hardware accelerators implemented in this work. The compressor consists of multiple modules, each representing one stage of Huffman compressor, all connected with ready/valid interfaces. The design consists of a character frequency counter, a character frequency sort, a tree generator, a tree depth annotation traversal, a sort for the depths of characters in the tree, a character depth normalizer, a codeword generator, and a compressed data output.
 
-\subsubsection{Character Frequency Counter}\label{sss:character_frequency_counter}
-The character frequency counter takes as input a number of characters determined by the "character counting frequency parallelism" parameter. This module iterates through the entire input data, counting how many occurrences of each possible character value there are, then passes an array of the total occurrences for each character to the character frequency sort.
+The character frequency counter takes as input a number of characters determined by the "character counting frequency parallelism" parameter. This module iterates through the entire input data, counting how many occurrences of each possible character value there are. Once this is complete, it passes an array of the total number of occurrences for each character to the character frequency sort.
 
-\subsubsection{Character Frequency Sort}\label{sss:character_frequency_sort}
-The character frequency sort module sorts the frequencies it is given, but requires two passes to perform the sort. This is because the hardware design will use a limited number of characters in the Huffman tree. After the first pass orders the most commonly occurring "characters in the Huffman tree" characters, the escape codeword is created, with a number of occurrences equal to the sum of all the least commonly occurring characters that are not able to be represented in the Huffman tree. This codeword and its frequency are used in a second pass to make sure that the escape codeword is receives a proper position in the Huffman tree. The order and frequency of each of the characters in the Huffman tree is passed to the next stage.
+The character frequency sort module sorts the frequencies it is given, but requires two passes to perform the sort. The first pass sorts the "characters in the Huffman tree" most frequent characters and sums the number of occurrences of characters that are excluded. Then, so all the characters can be represented in some way, the second pass uses this sum of occurrences for the escape character. The escape character is sorted into the existing character data, then the characters and their frequencies are passed to the tree generator.
 
-\subsubsection{Tree Generator}\label{sss:tree_generator}
+The tree generator builds a Huffman tree with hardware registers that can be configured as pointers or as character and frequency values. Just like with a standard Huffman tree, the tree generator iteratively builds a binary tree, adding nodes from the two least frequent members of the node list until the entire tree has a single root node. In this tree, all of the characters are leaf nodes. Each pointer from the root node can be eventually traversed  to reach a character. This tree of pointers and characters is passed to the next module.
+
+The value of the Huffman tree is in the depths of characters in the tree, so once the tree is built, it must be traversed to find the depth of each individual character. The tree depth annotation module performs an in-order traversal, only recording information about the leaf nodes, as these are the nodes that correspond to characters. Once the entire tree has been traversed, the depth of each character recorded by the tree depth annotation module are passed to the next module.
+
+The characters in the tree must be sorted based on their depth, so the next module sorts them accordingly. Unlike the first sort module in the Huffman design, there are no other complicating functions in this module, just a simple hardware sort. Once the data is sorted, it is passed to the next module.
+
+After sorting, it is possible that the characters in the Huffman tree could have been deeper than the chosen maximum depth, which determines the number of bits needed to encode a character. To remedy this, the tree normalization module iterates down the sorted list of characters, then back up from the bottom. On the way down the list, the number of unused spaces in the encoding space is calculated by the number of characters at each depth in the tree. Once the module begins iterating back up the list, and characters that are at a lower-than-allowed maximum depth are set to a depth equal to the maximum. Each time this occurs, the number of unused encoding spaces is updated, and if this number becomes negative, then the module continues traversing up the tree. Until the number of unused encoding spaces is non-negative, the module sets each character it encounters to the deepest possible depth, or to the shallowest depth that still causes fixes the negative encoding space issue. Once this is complete, the module passes on the normalized depth data to the second-to-last module in the design.
+
+The codeword generator is the final step in the design before the data can be encoded. This module uses the sorted, normalized data that it receives to generate codewords for each character. It starts with the data at a depth of one bit and an encoding of zero. Every time the next data item is deeper, the encoding is left-shifted by the difference in depth, and every time the next data item is the same depth, the encoding is incremented by one to get the encoding of the next character. In this way, every character and the escape character can be given unique encodings. Once this is complete for the characters in the Huffman tree, these characters, encodings, and the encodings for characters that utilize the escape character are written to registers that are visible to the final module of the design.
+
+The final module of the design uses the pre-computed encodings to compress the input data. First, this module outputs the plain text form of the Huffman tree as specified. Once this is completed, the module accepts input data to be compressed. This module can be configured to compress multiple streams from the input data in parallel. For each byte of each input stream, the corresponding encoding and encoding length is found from the codeword generator. Once this is found, the encoding and its length are output for each stream.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.33]{Huffman Compressor Block Diagram.png}
+	\caption{Huffman Compressor Block Diagram}
+	\label{fig:huffman_compressor_block_diagram}
+\end{figure}
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=1]{Huffman Decompressor Block Diagram.png}
+	\caption{Huffman Decompressor Block Diagram}
+	\label{fig:huffman_decompressor_block_diagram}
+\end{figure}
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=1]{LZW Compressor.png}
+	\caption{LZW Compressor Block Diagram}
+	\label{fig:lzw_compressor_block_diagram}
+\end{figure}
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=1]{LZW Decompressor.png}
+	\caption{LZW Decompressor Block Diagram}
+	\label{fig:lzw_decompressor_block_diagram}
+\end{figure}
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.8]{LZ77 Compressor.png}
+	\caption{LZ77 Compressor Block Diagram}
+	\label{fig:lz77_compressor_block_diagram}
+\end{figure}
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=1]{LZ77 Decompressor.png}
+	\caption{LZ77 Decompressor Block Diagram}
+	\label{fig:lz77_decompressor_block_diagram}
+\end{figure}
+
+\subsubsection{Decompressor}\label{sss:decompressor}
+The decompressor is much simpler than the compressor. First, the decompressor reads the plaintext tree data in from thread 0. In the plaintext tree, each character has a static bit width, and all possible characters in the Huffman tree are always transmitted, even if there are fewer characters than that used. The data is always transmitted unencoded character first, followed by the static-length character encoding, followed by the length of the encoding. Once this data is processed for each character, decompression can begin.
+
+With the tree stored in the dictionary, the decompressor then decodes each configured thread separately. If a matched codeword is the escape codeword, the decompressor reads out the bits after the escape word to get the literal character being referred to. Otherwise, the decompressor reads the correct value from the dictionary. This continues until every thread has decoded the correct number of characters.
+
+\subsection{LZW}\label{ss:lzw}
+\subsubsection{Compressor}\label{sss:compressor}
+The LZW compressor requires fewer steps to work than the Huffman compressor, so it is implemented in a single monolithic module. The most important part of the LZW compressor design is the dictionary. Each entry in the dictionary can hold a number of values equal to "maximum characters in a sequence" Additionally, each entry in the dictionary stores the number of character values it holds. The dictionary starts with a list of each literal character where the character's index in the dictionary is equal to its encoded value and its length is one character.
+
+The LZW compressor reads in characters one-at-a-time to a character buffer. The size of this buffer is determined by the "maximum characters in a sequence" parameter. Each time a new character is added to the buffer, the character is checked against the existing LZW dictionary and the length of matching entries is checked to be sure any matches are valid. Every match is held until the next clock cycle, and once the buffer is full or there is no match in the dictionary, the last match is output and the buffer is cleared. If a match was output because the buffer was full, the buffer is completely emptied, and if not, the buffer is emptied except for the most recently added character. Every time the buffer is cleared because there was no existing match, a new entry is added to the dictionary representing the character sequence in the buffer.
+
+When an output is transmitted, the LZW compressor also sends the number of bits of the data, so the wrapping module is able to pack the output values correctly. As the LZW dictionary grows, the number of bits required to represent an index in the dictionary grows as well.
+
+This sequence of filling and emptying the buffer and adding characters to the dictionary is repeated until there are no more remaining characters. If there are no more remaining characters but there is still data left in the character buffer, the "stop" signal can be asserted to force the compressor to output a match corresponding to the data still held in the character buffer.
+
+\subsubsection{Decompressor}\label{sss:decompressor}
+The LZW decompressor works in much the same way as the compressor, minus the character buffer. The decompressor also starts with the dictionary containing an entry for each literal character. Each of these entries still have a character length of one, and the index of each entry still matches its character value. The LZW decompressor takes outputs from the compressor and uses them as indices to look up sequences in the dictionary. It outputs each of the sequences in parallel. It also outputs the number of bits each input index currently consists of so that the hardware sending the data can correctly increment whatever counters are being used to send the unaligned data, because the number of bits in an input changes as the size of the dictionary increases.
+
+For each sequence that is not the maximum length, it and the first character of the following sequence are added to the dictionary. This makes sure that the LZW decompressor's dictionary stays in sync with the dictionary of the compressor. Unlike the LZW compressor, there is no need for a stop signal to send the final bytes of data, so once the input data is exhausted, all the output data will be transmitted as well.
+
+\subsection{LZ77}\label{ss:lz77}
+\subsubsection{Compressor}\label{sss:compressor}
+The LZ77 compressor consists of two primary components: a pattern search module that uses a CAM to search for multi-character patterns in the byte history combinationally, and the state machine and logic that utilize the pattern search module to perform LZ77 compression.
+
+The pattern search module uses an internal multi-character CAM. This CAM can receive data to be written and can receive patterns of data to search. The CAM outputs multiple large arrays of wires, with each array representing the matches of one of the characters in the search data. Each wire in the array is a boolean value representing whether or not the character at that position in the CAM is a match for the character being compared against. Additionally, the CAM provides an output that gives access to all of its stored data so that, when matches longer than "CAM max pattern length" are found, the state machine of the LZ77 compressor can check their true length.
+
+The pattern search module uses the output of the internal CAM to find patterns up to length "CAM max pattern length". It does this by submitting a pattern to the CAM, then left-shifting each boolean array of matches from the CAM by its index and performing a bitwise AND between them. As each aditional array AND is performed, the remaining true values in the array correspond to the starting indices of patterns that match a number of characters. Once all ANDs have been performed, the only remaining true values in the array are the indices of the starting points for patterns that matched the CAM input entirely. By reversing the resulting arrays of wires and using the Chisel3 lastIndexWhere() function, the first matching index of patterns of each length can be found. The results of each of these lastIndexWhere() functions can be chosen by performing an AND reduction on each resulting array of wires in the bitwise AND operation previously described, and picking the longest pattern that returns a true value from this reduction.
+
+The state machine that controls compression stores the input data in a buffer. The buffer must be filled, and then each clock cycle, the buffer is checked against the pattern search module. If a pattern is of a length such that the number of characters to encode the pattern is less than or equal to the number of characters in the pattern, the pattern is compressed. Otherwise, the oldest character in the buffer is shifted out while a new character is shifted in, the old character is added to the byte history, and the old character is output as a literal character.
+
+When a pattern is long enough to be compressed, the encoding starts off with an escape character determined by the "escape character" parameter. If the escape character is a literal representation of that character value, the escape character occurs twice in a row. If not, the escape character is followed by the negation of the most significant bit in the escape character, then the starting index of the pattern in the byte history, then the number of characters in the pattern. This encoding is character-aligned, which causes it to work very well with Huffman encoding. However, to keep the encoding character-aligned while allowing long patterns, the encoding can have a variable length. The smallest length of the encoding occurs when the number of characters in the pattern can be added into the remaining bits after the escape character, negation bit, and index are all used. Because a pattern always has a minimum length, the pattern's length is always incremented by the pattern's break-even length to increase the efficiency of the encoding. If the pattern is too long to be represented this way, the maximum length value is set, and the next character's value is added to the pattern length. This can continue arbitrarily until the maximum number of characters in a pattern is reached. 
+
+\subsubsection{Decompressor}\label{sss:decompressor}
+The LZ77 decompressor takes enough characters to allow the largest possible pattern encoding from the LZ77 compressor to be read in a single cycle. If the first character in the input data is not an escape character or is two escape characters in a row, it is counted as a literal that is output and added to the character history. Otherwise, a state machine is used to read bytes from the character history in parallel. The LZ77 decompressor continues to take inputs until the configured number of bytes is decompressed, then finishes.
 
 
-\subsubsection{Tree Depth Annotation Traversal}\label{sss:tree_depth_counter}
+\chapter{Results and Analyses} \label{ch:results}
+\section{ASIC Area and Frequency Comparison}\label{se:asic_area_and_frequency_comparison}
+All designs were implemented with the ASAP7 7nm Predictive PDK. First, designs were synthesized with a clock period of 10 picoseconds. The negative slack from this synthesis run could then be used to find the lowest possible clock speed and the area usage of the design at this speed. A second run at the correct maximum clock speed can then be used to find power information, if desired. Each design shown is configured according to the typical configurations found in Section \ref{se:design_details}.
 
-\subsubsection{Character Depth Sort}\label{sss:sort}
+Figure \ref{fig:maximum_clock_speeds} shows the highest clock speeds achievable by each design configuration. As can be seen, most of the designs are capable of achieving at least 2 GHz, except for the LZ77 compressor and the LZW decompressor. The reason for the LZ77 compressor's lower than expected clock speed is not currently known. Initial investigations into the clock speed by dividing the design up and synthesizing it as separate pieces suggest that the reduction in clock speed is not due to the CAM or pattern search module, so must be due to the state machine. However, the state machine does not contain much additional logic, so it is currently unclear what components cause the slowdown.
 
-\subsubsection{Character Depth Normalizer}\label{sss:tree_normalizer}
+As for the LZW decompressor, although its hardware is simpler than the LZW compressor, the compressor takes two cycles per byte compressed. The LZW decompressor only uses one cycle per input pattern. It is suspected that the synthesis tools are able to perform register retiming on the LZW compressor to make it faster, but that this retiming is not possible on the decompressor because fewer cycles are available for each additional pattern to the dictionary. This also must be investigated further to be determined certainly.
 
-\subsubsection{Codeword Generator}\label{sss:codeword_generator}
+The authors of \cite{ibm} do not discuss the specifics of the clock speeds attainable by the hardware. However, they mention that the target clock speeds are 2.0-2.5 GHz. The IBM POWER9 and z15 compressors are implemented on a 14 nm manufacturing node. Although there is no way to make a direct comparison between the GlobalFoundries node used by IBM and the ASAP7 PDK, \cite{wikichip-manufacturing-conversion} provides a way to approximate. If it is assumed that the difference between the GlobalFoundries 14 nm node and ASAP7 is the same as the difference between TSMC's 16 nm node and TSMC's 7 nm node described in \cite{wikichip-manufacturing-conversion}, then IBM would be able to achieve speeds 35-40\% faster than the POWER9 compression engine, meaning it would be in the range of 2.7-3.5 GHz. This would mean that its clock speeds are faster than most of the designs of this work. However, it is important to note that \cite{ibm} is heavily optimized to achieve these clock speeds, and the most important aspect of the design is not clock frequency, but total memory latency.
 
-\subsubsection{Compressed Data Output}\label{sss:compressor_output}
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.6]{Maximum Clock Speeds.png}
+	\caption{Maximum Clock Speeds}
+	\label{fig:maximum_clock_speeds}
+\end{figure}
 
-\subsection{Decompressor}\label{ss:huffman_hardware_decompressor}
+Although not all of the designs can achieve similar clock speeds to the IBM compression accelerator, they are certainly much more configurable due to their parameterization. As can be seen from Figure \ref{fig:design_configuration_area_comparison}, all of the areas of the designs in this work can be significantly changed based on the configuration. The compressor and decompressor with the largest capability for change, LZW, can change in size more than an order of magnitude, depending on what values the parameters are set to.
 
-\section{LZW Hardware Design}\label{se:lzw_hardware_design}
-Once the Huffman encoding hardware was complete, it was determined that an LZ-based algorithm was needed to go along with it and improve its compression ratios on the workloads being investigated. The LZ77 was determined to be complicated and expensive to implement in hardware due to the size of the character history window, so LZW, an algorithm specifically designed for implementation in hardware, was chosen.
+The designs in this work also achieve much lower areas than the IBM work. Figure \ref{fig:synthesized_area_results} shows the area results of the design configurations chosen to be compared to the IBM implementation. Although IBM does not publish the exact area of the POWER9 compression engine, \cite{ibm} mentions that the compression engine takes less than 0.5\% of the total chip area. Additionally, estimates of the die area from photographs can be used to indicate the approximate area of the IBM design\cite{wikichip-ibm-area}. For a direct comparison to the IBM area estimate, Figure \ref{fig:synthesized_area_results} shows the area of the designs from this work and IBM, normalized to the smallest design in this work. As is evident, the smallest design in this work is 866x smaller than IBM's accelerator, and even the largest design in this work is still 25x smaller than IBM's design. 
 
-\subsection{Compressor}\label{ss:lzw_hardware_compressor}
-\subsection{Decompressor}\label{ss:lzw_hardware_decompressor}
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.35]{Design Configuration Area Comparison.png}
+	\caption{Design Configuration Area Comparison}
+	\label{fig:design_configuration_area_comparison}
+\end{figure}
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.6]{Synthesized Area Results.png}
+	\caption{Synthesized Area Results}
+	\label{fig:synthesized_area_results}
+\end{figure}
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.6]{Normalized Hardware Area Comparison.png}
+	\caption{Normalized Hardware Area Comparison}
+	\label{fig:normalized_hardware_area_comparison}
+\end{figure}
 
-\section{LZ77 Hardware Design}\label{se:lz77_hardware_design}
-After the LZW hardware was completed, it was determined to be a poor fit for Huffman compression due to Huffman's reliance on a small number of frequently used characters and LZW's reliance on generating a large variety of characters that be used very infrequently. For this reason, it was decided that LZ77 would be implemented as well. 
+\section{Latency Comparison}\label{se:latency_comparison}
+To compare latencies to the IBM design, first it is important to calculate the latencies of the IBM design. For the purposes of comparing against this work's designs, it is most fair to compare IBM's latency to compress or decompress a 4 KB page of memory. The IBM paper states, "We model the accelerator execution time \emph{T} with $T=T_{0}+Data\_Size/PeakBandwidth$ where constant \emph{$T_{0}$} is the setup time with is the software and hardware initialization delays before the accelerator starts processing data." \cite{ibm}. To get the overall hardware latency of the IBM design, the hardware latency portion of \emph{$T_{0}$} needs to be known, and the result of $Data\_Size/PeakBandwidth$ needs to be known for compression and decompression. The sum of these will be the hardware latency for IBM's implementations.
 
-\subsection{Compressor}\label{ss:lz77_hardware_compressor}
-\subsection{Decompressor}\label{ss:lz78_hardware_decompressor}
+The hardware latency portion of \emph{$T_{0}$} can be found without difficulty. Later in the paper, Abali et. al state, "Therefore, with multithreading software delays nearly disappear in the total delay calculations and the 8-thread latencies in Table II reveal the actual NXU hardware latencies in the 0.55-0.73\emph{$\mu$} range" \cite{ibm}. The table referred to can then be used to find the hardware latency for compression and decompression for both the z15 and POWER9 accelerator engines.
 
-\chapter{Results} \label{ch:results}
-\chapter{Discussion} \label{ch:discussion}
+The latency once the hardware is initialized requires some additional math, but can be found from IBM's description as well. The IBM paper says that, "When the data size is $Half\_Peak\_Data\_Size=T_{0} \times PeakBandwidth$ we get $T=2T_{0}$, which means that half the time is spent in the setup and the other half in the accelerator doing actual processing." \cite{ibm}. From this, we can deduce that $PeakBandwidth=Half\_Peak\_Data\_Size \div T_{0}$. The peak data size of 4 KB is already known, so the final equation for this portion of the latency is $4KB/(Half\_Peak\_Data\_Size \div T_{0})$. These remaining variables can both be found in the IBM paper's Table II, so it is possible to calculate the hardware latency of each accelerator. The latency of each accelerator is shown in Table \ref{tab:ibm_latencies}.
+
+\begin{table}[htb]
+	\centering
+	\caption{Hardware Latencies of IBM Compression and Decompression Accelerators}
+	\begin{tabular}{cc}
+	    \toprule
+	    Hardware Design & Total Hardware Latency ($\mu$s) \\
+		\midrule
+		POWER9 Compressor & 1.1 \\
+		\midrule
+		z15 Compressor & 0.88 \\
+		\midrule
+		POWER9 Decompressor & 1.21 \\
+		\midrule
+		z15 Decompressor & 1.205 \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:ibm_latencies}
+\end{table}
+
+Because I have all of the necessary information for my designs, it is much simpler to calculate the total latencies. The minimum and maximum compression and decompression latencies are simply the most and fewest possible cycles to compress or decompress a page multiplied by the clock period of a single cycle. {\color{red} should this include a table of the minimum and maximum clock latencies?}
+
+Figure \ref{fig:compression_design_latencies} and Figure \ref{fig:decompression_design_latencies} show the latency comparison between the IBM accelerator and my work. As can be seen in these graphs, the minimum decompression latencies from my designs have significantly lower latencies than the IBM designs. However, although the minimum decompression latencies are lower, there are some important details to notice: the maximum decompression latencies are higher than the IBM design, the compression latencies are often higher with my designs, and the Deflate hardware design is hypothetical.
+
+The maximum decompression latencies may be higher for my design than the IBM design, but these maximum decompression latencies can only be reached when the data is completely incompressible. If data is incompressible, then there is no need for it to be stored in memory in a compressed form, so no need for it to be decompressed. In all cases with reasonable compression ratios for the compressed memory, the latency of my hardware designs is significantly lower than IBM's.
+
+The compression latencies are also often higher with my designs. However, this is not as much of a concern with memory compression as the decompression latencies. This is because, while the decompression is on the critical path to completing computations, the compression latency is not. Once a compression operation has been submitted, the CPU could move on while the memory write was buffered and compressed in the background.
+
+The final note on these figures is that the Deflate hardware design shown is hypothetical. The latency numbers for this design make the conservative assumption that no pipelining can take place between LZ77 and Huffman compression or decompression, and each stage completes separately before the next one starts. Even making this assumption, my hardware designs could achieve significantly lower latencies than IBM if they were combined to form a Deflate compressor and decompressor.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.5]{Compression Design Latencies.png}
+	\caption{Compression Design Latencies}
+	\label{fig:compression_design_latencies}
+\end{figure}
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.5]{Decompression Design Latencies.png}
+	\caption{Decompression Design Latencies}
+	\label{fig:decompression_design_latencies}
+\end{figure}
+
+\section{Compression Ratio Comparison}\label{se:compression_ratio_comparison}
+Although decompression latency is very important, it must not be at the cost of significant data compressibility. If the memory compressibility is significantly reduced, then there is no point to compressing the memory in the first place. Figure \ref{fig:benchmark_memory_dump_compressibility} shows the compression ratios achieved by each of the hardware designs as configured above. Additionally, LZ77+Huffman on the graph shows the performance of a hypothetical design combining LZ77 compression and Huffman decompression to create a Deflate compressor. This figure shows that on average, the LZ77+Huffman hardware is capable of achieving compression ratios 87\% as high as the software Deflate implementation. While this reduction is non-negligible, it is not enough to completely negate the value of memory compression, and the latency reduction of several orders of magnitude is likely worth the slightly reduced compressibility. This is especially true in the context of operating system memory compression. Because the operating system often does not compress memory data to a byte granularity, it is quite possible that many workloads would see similar or identical effective memory from the hardware implementation and the software implementation.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.24]{Benchmark Memory Dump Compressibility.png}
+	\caption{Benchmark Memory Dump Compressibility}
+	\label{fig:benchmark_memory_dump_compressibility}
+\end{figure}
+
+\chapter{Limitations and Future Work} \label{ch:discussion}
+Although this works compares very well to the current state of the art, there are a number of potential improvements that could strengthen it significantly. In this chapter, these potential improvements will be discussed in order of potential benefit.
+
+Currently, the LZ77 decompressor design is capable of decompressing multiple characters per cycle when given an encoded pattern. However, when the LZ77 decompressor receives uncompressed literal characters, it currently processes them one-at-a-time, sequentially. This makes the LZ77 decompression latency very closely tied to the compressibility of the data. To fix this, it would be relatively simple to support multiple bytes of literal input per cycle. A naive implementation would only do this search if there were no escape characters at all in the characters read in parallel. However, a more complex implementation could support variable parallel read speeds, only reading characters that come before an escape character in the input data. This would significantly decouple the decompression latency from the compressibility of the data, improving the speed of nearly all decompression operations by a significant margin.
+
+The designs would also benefit from being formally verified. Although the designs have each been tested with over 400,000 4 KB memory dump files without any bugs found, it is possible that there are edge cases that have not been reached that could cause the hardware designs to compress or decompress incorrectly. Formal verification is a method of mathematically proving that a design has certain characteristics, given a set of initial assumptions. If the designs were formally verified to never incorrectly compress or decompress data, this would make them significantly better candidates for incorporating into an ASIC. Additionally, an easy-to-use formal verification flow would allow for faster design changes, because bugs could be caught as soon as they were written and tested.
+
+While the designs are all able to achieve low latencies, some of the designs are not able to run above 2 GHz. Because one of the ideal use cases of these designs are in a memory controller, it would be good for the designs to be able to run at the clock speeds common in server CPUs, somewhere in the 2-3 GHz range. This would allow integration into memory controllers without the need for multiple clock domains. Additionally, if this could be achieved without increasing the number of cycles needed to perform the compression or decompression operations, increasing the clock speeds of the designs would also further reduce latency.
+
+Another valuable future work would be to add the design to a larger project. Currently, the designs have only been tested in an isolated context. Adding the designs to something like a memory controller or FPGA to accelerate compression and decompression would provide valuable feedback about how easily the design can be interfaced with. This is an important future work, as it is the motivation for open-sourcing this work.
+
+While this work is primarily targeted towards memory compression with its low latencies, all of the designs in this work have very low area overhead. Additionally, they implement algorithms that are frequently used for data outside of memory compression. While it has not yet been investigated, it would be interesting to see the compression ratios and performance that could be expected from these designs in a file or network compression context.  It seems likely that they would perform well, but it is yet to be seen.
+
+Finally, it would be beneficial to create software libraries that are compatible with the compressors and decompressors shown in this work. Many previous works utilize only a compression accelerator or only a decompression accelerator \cite{hardwarelz4, fpgahuffmanlz77, gziponachip, hdfsgzip, ribeiro, deflatedecompression, lzrw1}. However, because modifications have been made to all of the algorithms used in this work, there do not currently exist any software implementations that are compatible with the hardware.  To further improve the flexibility of the design, it would be valuable to implement performant, configurable software implementations of the compressors and decompressors.
+
 \chapter{Conclusions} \label{ch:conclusions}
-\chapter{Summary} \label{ch:summary}
+As workloads continue to eat up more RAM, memory compression will continue to become an important cost-saving tool. Although the existing compression accelerators are able to significantly reduce the latency of compression and decompression, existing accelerators are several times slower than an uncompressed memory access. This work improves upon the existing state of the art by reducing the decompression latency by nearly 4x. Additionally, this work does so while reducing the area by over an order of magnitude. Most importantly, this work is open-source under the MIT license, so it is available for future research groups to continue to improve upon and modify. If it is used, it has the potential to save researchers hundreds or thousands of hours of work re-implementing the same compression algorithms in hardware.
 
-	% This is the standard bibtex file. Do not include the .bib extension in <bib_file_name>.
-	% Uncomment the following lines to include your bibliography: 
-	\bibliography{related_works}
-	\bibliographystyle{plainnat}   
+% This is the standard bibtex file. Do not include the .bib extension in <bib_file_name>.
+% Uncomment the following lines to include your bibliography: 
+\bibliography{related_works}
+\bibliographystyle{plainnat}   
 
 	% This formats the chapter name to appendix to properly define the headers:
-	\appendix
+% 	\appendix
 
 	% Add your appendices here. You must leave the appendices enclosed in the appendices environment in order for the table of contents to be correct.
-	\begin{appendices}
-		\chapter{First Appendix} \label{app:appendix_one}
-			\section{Section one} \label{ase:app_one_sect_1}
-			\section{Section two} \label{ase:app_one_sect_2}
-		\chapter{Second Appendix} \label{app:appendix_two}
-	\end{appendices}
+% 	\begin{appendices}
+% 		\chapter{First Appendix} \label{app:appendix_one}
+% 			\section{Section one} \label{ase:app_one_sect_1}
+% 			\section{Section two} \label{ase:app_one_sect_2}
+% 		\chapter{Second Appendix} \label{app:appendix_two}
+% 	\end{appendices}
 
 \end{document}
 
