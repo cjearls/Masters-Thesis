@@ -139,11 +139,10 @@ Finally, once each of the leaf nodes has been given an encoding, the second pass
 
 To decode Huffman-encoded data, only the original Huffman tree is needed. Then, the decompressor can simply traverse the Huffman tree for each bit in the encoded data, stopping and starting from the root node every time a leaf is reached. In many cases, the original Huffman tree is stored in canonical Huffman form to save space, but because this canonical form is not used for the hardware compressor and decompressor of this work, it is not relevant.
 
-% TODO: Might be good to give an example of how Huffman works for readers who aren't familiar
 \subsubsection{Example}\label{sss:huffman_example}
 For the purposes of demonstration, the string of characters being compressed for Huffman will be:
 
-$A,A,A,B,A,A,C,B,B,A,A,B,D,A,A$
+\[A,A,A,B,A,A,C,B,B,A,A,B,D,A,A,B\]
 
 Without using Huffman encoding, each of these characters could be encoded with only two bits. An example of the encodings that could be used to do this is shown in Table \ref{tab:default_encoding}. Because there are 16 characters in the example, it would require a total of 32 bits to encode this data.
 
@@ -177,7 +176,7 @@ The first step in dynamic huffman encoding is to count and sort the frequency th
 	    \midrule
 	    A & 9 \\
 	    \midrule
-	    B & 4 \\
+	    B & 5 \\
 	    \midrule
 	    C & 1 \\
 	    \midrule
@@ -187,7 +186,41 @@ The first step in dynamic huffman encoding is to count and sort the frequency th
 	\label{tab:character_frequency_count}
 \end{table}
 
-Once the sorted list of frequencies is complete, the Huffman tree can be built. To build the Huffman binary tree, create a parent node and set its children to be the two least frequent nodes in the list of existing nodes. Remove the two nodes that were set as children from the list of characters remaining, add the new parent node to the list, and re-sort the list by frequency. This step can be repeated until there is only a single node remaining in the list. This is the root node.
+Once the sorted list of frequencies is complete, the Huffman tree can be built. To build the Huffman binary tree, create a parent node and set its children to be the two least frequent nodes in the list of existing nodes. Remove the two nodes that were set as children from the list of characters remaining, add the new parent node to the list, and re-sort the list by frequency. This step can be repeated until there is only a single node remaining in the list. This is the root node. Figure \ref{fig:completed_huffman_tree_example} shows a completed Huffman tree.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[scale=0.25]{Huffman Tree Example.png}
+	\caption{Completed Huffman Tree Example}
+	\label{fig:completed_huffman_tree_example}
+\end{figure}
+
+Once the Huffman tree is completed, the standard Huffman algorithm is nearly finished. A codeword can be generated for each character in the tree based on its position in the tree. Starting with the root node, each the sequence of left and right children shows the encoding of a character. Each left appends a 0 to the encoding, and each right appends a 1. It is useful to note here that each character's depth in the tree is equal to the number of bits in its encoding. A character encoding based on the tree in Figure \ref{fig:completed_huffman_tree_example} is shown in Table \ref{tab:huffman_encodings}.
+
+\begin{table}[htb]
+	\centering
+	\caption{Character Encodings}
+	\begin{tabular}{ccc}
+	    \toprule
+	    Character & Character Encoding & Character Encoding Length\\
+	    \midrule
+	    A & 0 & 1\\
+	    \midrule
+	    B & 10 & 2\\
+	    \midrule
+	    C & 110 & 3\\
+	    \midrule
+	    D & 111 & 3\\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:huffman_encodings}
+\end{table}
+
+Now, the only task remaining is to encode each character using the codewords shown in Table \ref{tab:huffman_encodings}. The fully encoded example string of characters is shown below. Underscores are used to demonstrate separation between each character for the clarity of the reader. However, it is important to note that delimiters of any kind are unnecessary for Huffman encoding, because every character is a leaf node, so there is no way to mistake the meaning of a sequence of bits.
+
+\[0\_0\_0\_10\_0\_0\_110\_10\_10\_0\_0\_10\_111\_0\_0\_10\]
+
+As can be seen by the above resulting bit sequence, a significant number of bits have been saved. The original encoding would have required 32 bits, but this version only needs 25 bits. This simple example results in a compression ratio (calculated by dividing the resulting size by the initial size) of 1.28. This compression ratio and example does not include the overhead required to represent the Huffman tree, but this work uses a non-standard representation anyway, so these details are irrelevant to this simple example.
 
 % TODO: Might be good to give an example of how LZ77 works for readers who aren't familiar
 \subsection{LZ77}\label{ss:lz77}
