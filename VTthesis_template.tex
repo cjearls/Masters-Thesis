@@ -126,8 +126,9 @@ This chapter covers important background information on how the compression algo
 \section{Compression Algorithms}\label{se:compression_algorithms}
 There are two primary types of lossless compression algorithms: those that alter character encoding methods and those that match sequences of characters. Although there are many examples of both compression techniques, this work focuses on Huffman encoding for character compression and LZ-based strategies for sequence compression. This is because they are the most common bases in the state-of-the-art for memory compression.
 
-% TODO: Might be good to give an example of how Huffman works for readers who aren't familiar
 \subsection{Huffman Encoding}\label{ss:huffman_encoding}
+This subsection discusses the steps needed to perform Huffman encoding. It also includes an example to demonstrate the steps.
+
 Huffman encoding achieves minimum redundancy of data by giving characters of data variable lengths \cite{huffman}. The lengths of each encoding are determined by how frequently it appears in the data being compressed. Frequently-occurring data are assigned shorter encodings, and infrequently-occurring data are assigned longer encodings. In this way, data can be optimally encoded such that no two characters' representations could be swapped to achieve a shorter encoding result. 
 
 Static Huffman encoding uses a pre-made Huffman tree to encode the data. However, dynamic Huffman encoding is done in two passes. In the first pass, the number of occurrences of each data character are counted to determine their relative frequencies. Afterwards, these frequencies are used to construct a binary tree where each data character is a leaf node. The construction of this tree starts from the two least frequent characters. Every time two nodes are combined under a new parent node, the parent node's frequency becomes the sum of the frequencies of its children. This continues until a single root node encompasses the entire tree.
@@ -137,6 +138,36 @@ Once the tree is constructed, the lengths and encodings of the characters can be
 Finally, once each of the leaf nodes has been given an encoding, the second pass can encode the data. For each character of the input data, the second pass looks up its new encoding and outputs this new encoding. This continues until every character of the input has been encoded.
 
 To decode Huffman-encoded data, only the original Huffman tree is needed. Then, the decompressor can simply traverse the Huffman tree for each bit in the encoded data, stopping and starting from the root node every time a leaf is reached. In many cases, the original Huffman tree is stored in canonical Huffman form to save space, but because this canonical form is not used for the hardware compressor and decompressor of this work, it is not relevant.
+
+% TODO: Might be good to give an example of how Huffman works for readers who aren't familiar
+\subsubsection{Example}\label{sss:huffman_example}
+For the purposes of demonstration, the string of characters being compressed for Huffman will be:
+
+$A,A,A,B,A,A,C,B,B,A,A,B,D,A,A$
+
+Without using Huffman encoding, each of these characters could be encoded with only two bits. An example of the encodings that could be used to do this is shown in Table \ref{tab:default_encoding}. Because there are 16 characters in the example, it would require a total of 32 bits to encode this data.
+
+\begin{table}[htb]
+	\centering
+	\caption{Example Uncompressed Encoding}
+	\begin{tabular}{cc}
+	    \toprule
+	    Character & Binary Encoding\\
+	    \midrule
+	    A & 00 \\
+	    \midrule
+	    B & 01 \\
+	    \midrule
+	    C & 10 \\
+	    \midrule
+	    D & 11 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:default_encoding}
+\end{table}
+
+
+The first step in dynamic huffman encoding is to count the frequency that each character occurs. 
 
 % TODO: Might be good to give an example of how LZ77 works for readers who aren't familiar
 \subsection{LZ77}\label{ss:lz77}
