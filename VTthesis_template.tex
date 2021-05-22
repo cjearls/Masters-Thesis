@@ -50,10 +50,11 @@
 
 % The dedication and acknowledgement pages are optional. Comment them out to remove them.
 \dedication{For Alfie, the smartest, happiest dog a man could ask for}
-\acknowledge{I would like to thank my lovely wife, Emilie, for her support while I performed this research. I would also like to thank my family and friends for their support. I would like to thank Dr. Jian for his close work on my thesis. I also want to thank my other advisors for their advice and guidance throughout my academic career.}
+% TODO: add an acknowledgement thanking Dr. Jian's NSF CCF-1919113 grant.
+\acknowledge{I would like to thank my lovely wife, Emilie, for her support while I performed this research. I would also like to thank my family and friends for their support. I would like to thank Dr. Jian for his close work on my thesis. I would like to thank Dr. Cameron for mentoring me and guiding me through both my undergraduate and graduate research careers. I would like to thank Dr. Butt for his helpful questions that led me to think more deeply about the topics I was investigating. And I would like to thank Dr. Min for his helpful information on modern memory management algorithms. Finally, I would like to thank the NSF projects 1850025, 1919113, 1942590, 1838271, 1565314, 1939076, each of which have supported me through various points in my academic career.}
 
 % The abstract is required.
-\abstract{In recent years, memory has shown to be a constraining factor in many workloads. Memory is an expensive necessity in many situations, from embedded devices with a few kilobytes of SRAM to warehouse-scale computers with thousands of terabytes of DRAM. Memory compression has existed in all major operating systems for many years. However, while faster than swapping to a disk, memory decompression adds latency to data read operations. Companies and research groups have investigated hardware compression to mitigate these problems. Still, open-source low-latency hardware compressors and decompressors do not exist; as such, every group that studies hardware compression is forced to implement it. Importantly, because the devices that can benefit from memory compression vary so widely, there is no single solution to address all devices' area, latency, power, and bandwidth requirements. This work intends to address the many issues with hardware compressors and decompressors. This work implements hardware accelerators for three popular compression algorithms, LZ77, LZW, and Huffman encoding. Each implementation includes a compressor and decompressor, and all designs are entirely parameterized. There are a total of 22 parameters between the designs in this work. All of the designs are open-source under a permissive license. Finally, configurations of the work can achieve decompression latencies under 500 nanoseconds and compression ratios comparable to software compression algorithms.} 
+\abstract{In recent years, memory has shown to be a constraining factor in many workloads. Memory is an expensive necessity in many situations, from embedded devices with a few kilobytes of SRAM to warehouse-scale computers with thousands of terabytes of DRAM. Memory compression has existed in all major operating systems for many years. However, while faster than swapping to a disk, memory decompression adds latency to data read operations. Companies and research groups have investigated hardware compression to mitigate these problems. Still, open-source low-latency hardware compressors and decompressors do not exist; as such, every group that studies hardware compression is forced to implement it. Importantly, because the devices that can benefit from memory compression vary so widely, there is no single solution to address all devices' area, latency, power, and bandwidth requirements. This work intends to address the many issues with hardware compressors and decompressors. This work implements hardware accelerators for three popular compression algorithms; LZ77, LZW, and Huffman encoding. Each implementation includes a compressor and decompressor, and all designs are entirely parameterized. There are a total of 22 parameters between the designs in this work. All of the designs are open-source under a permissive license. Finally, configurations of the work can achieve decompression latencies under 500 nanoseconds, much closer than existing works to the 263.84 nanoseconds required to read an uncompressed 4 KB page. The configurations of this work accomplish this while still achieving compression ratios comparable to software compression algorithms.} 
 
 % The general audience abstract is required. There are currently no word limits.
 %You are also required as of Spring 2016 to include a general audience abstract. This should be geared towards individuals outside of your field that may be reading seeking information about your work. You should avoid language that is particular to your field and clearly define any terms that may have special meaning in your discipline.
@@ -110,7 +111,7 @@ In cloud and data center configurations, where the maximum available memory is o
 
 Software RAM compression has existed for many years to reduce the need for physical memory. It is supported in Linux, Windows 10, and MacOS \cite{linux_memory_compression, windows10_memory_compression, macos_memory_compression}. However, software decompression adds nearly 75 microseconds of latency to memory read operations. Compared to the latency to read an uncompressed page of memory, 263.84 nanoseconds, decompression adds over 280x more latency. This additional latency can have a significant impact on performance. However, this latency can be significantly reduced if compression and decompression are hardware-accelerated.
 
-There are several existing implementations of hardware-accelerated compressors and decompressors, but these are not suitable for memory compression research \cite{ibm,microsoft}. These designs are not optimized for latency, resulting in poor decompression latency. They are also not specialized for memory compression, which could result in lower effective memory available when using them. These designs are also exclusively proprietary and closed-source, so hardware memory compression research always requires building entirely new hardware before it can be evaluated.
+There are several existing implementations of hardware-accelerated compressors and decompressors, but these are not suitable for memory compression research \cite{ibm,microsoft}. These designs are not optimized for latency, resulting in poor decompression latency. They are also not specialized for memory compression, which could result in lower effective memory available when using them. These designs are also exclusively proprietary and closed-source, so hardware memory compression research requires building entirely new hardware before it can be evaluated.
 
 The closed-source nature of existing works makes it difficult to conduct memory compression research for a number of reasons. Most importantly, because no state-of-the-art open-source hardware compressors and decompressors exist, researchers must spend months, if not years, designing, implementing, testing, debugging, synthesizing, and optimizing the compression hardware before it can be incorporated into a hardware design and used for compression or decompression. This must be done every time memory compression research is to be conducted, adding significant unnecessary development costs to compression projects. By providing open-source tools, this work empowers the architecture research community to generate area, frequency, and power numbers for simulators, FPGA-accelerate simulations to improve the speed of simulation, and even tape-out chips in less time than ever before.
 
@@ -120,24 +121,34 @@ This work attempts to address the shortcomings of existing hardware compressors 
 
 This compressors and decompressors in this work are capable of several times lower latency than the existing state of the art hardware compression and decompression accelerators. These hardware compressors and decompressors also use an order of magnitude less area than the existing state of the art. Finally, the compressors and decompressors in this work accomplish all of this while being fully configurable and open-source for anyone to use in the future. 
 
-\chapter{Background} \label{ch:background}
-This chapter covers important background information on how the compression algorithms relevant to this work function.
+\chapter{Literature Review} \label{ch:literature_review}
+This chapter reviews the relevant literature on hardware compression and decompression accelerators to demonstrate why existing works do not adequately address the needs of the memory compression research community.
+
+\section{Overview}\label{se:lit_rev_overview}
+The following sections discuss many related works and their strengths and weaknesses. These related works are all inadequate in at least one of several ways. They each at least are proprietary designs, have high decompression latencies, do not contain matching compressors and decompressors, are not configurable, or are only implemented on FPGAs. Thus, these are all of the problems that this work attempts to address simultaneously.
 
 \section{Compression Algorithms}\label{se:compression_algorithms}
-There are two primary types of lossless compression algorithms: those that alter character encoding methods and those that match sequences of characters. Although there are many examples of both compression techniques, this work focuses on Huffman encoding for character compression and LZ-based strategies for sequence compression. This is because they are the most common bases in the state-of-the-art for memory compression.
+There are two types of compression algorithms: lossy and lossless. Lossy compression algorithms are often able to achieve much higher compression ratios, but lossy compression often changes the data being compressed in some way. For memory compression, which might hold important data, pointers, or programs, the errors of lossy compression are not acceptable. For this reason, lossless compression is the focus of most works in the field of memory compression.
+There are two primary types of lossless compression algorithms: those that change the way characters are encoded to save space and those that utilize repeated sequences of characters to save space. This section describes the existing lossless compression algorithms to give context for the hardware compression designs in this work.
+
+% TODO: add information on other compression algorithms, concluding with the algorithms used in my work.
 
 \subsection{Huffman Encoding}\label{ss:huffman_encoding}
 This subsection discusses the steps needed to perform Huffman encoding. It also includes an example to demonstrate the steps.
 
 Huffman encoding achieves minimum redundancy of data by giving characters of data variable lengths \cite{huffman}. The lengths of each encoding are determined by how frequently it appears in the data being compressed. Frequently-occurring data are assigned shorter encodings, and infrequently-occurring data are assigned longer encodings. In this way, data can be optimally encoded such that no two characters' representations could be swapped to achieve a shorter encoding result. 
 
-Static Huffman encoding uses a pre-made Huffman tree to encode the data. However, dynamic Huffman encoding is done in two passes. In the first pass, the number of occurrences of each data character are counted to determine their relative frequencies. Afterwards, these frequencies are used to construct a binary tree where each data character is a leaf node. The construction of this tree starts from the two least frequent characters. Every time two nodes are combined under a new parent node, the parent node's frequency becomes the sum of the frequencies of its children. This continues until a single root node encompasses the entire tree.
+To accomplish this, Huffman encoding arranges all of the unique characters in the data into a binary tree, where each character is a leaf node. This tree is then used to find the most efficient encoding for each character in the data. There are two types of Huffman encoding: static and dynamic.
+
+Static Huffman encoding uses a pre-made Huffman tree to encode the data. This reduces its flexibility, because the static tree will work very well for certain inputs and poorly for others. However, using a pre-made tree removes all of the work required to create a tree, which simplifies and speeds up the algorithm to encode the data.
+
+Dynamic Huffman encoding is done in two passes. In the first pass, the number of occurrences of each data character are counted to determine their relative frequencies. Afterwards, these frequencies are used to construct a binary tree where each data character is a leaf node. The construction of this tree starts from the two least frequent characters. Every time two nodes are combined under a new parent node, the parent node's frequency becomes the sum of the frequencies of its children. This continues until a single root node encompasses the entire tree.
 
 Once the tree is constructed, the lengths and encodings of the characters can be determined. The number of bits used to represent a character is equal to its depth in the tree from the root node. The encoding of each character is determined by the traversal steps required to reach it from the root node. Every left path in the tree concatenates a `0` to the binary encoding of the character, and each right path concatenates a `1` to the binary encoding.
 
 Finally, once each of the leaf nodes has been given an encoding, the second pass can encode the data. For each character of the input data, the second pass looks up its new encoding and outputs this new encoding. This continues until every character of the input has been encoded.
 
-To decode Huffman-encoded data, only the original Huffman tree is needed. Then, the decompressor can simply traverse the Huffman tree for each bit in the encoded data, stopping and starting from the root node every time a leaf is reached. In many cases, the original Huffman tree is stored in canonical Huffman form to save space, but because this canonical form is not used for the hardware compressor and decompressor of this work, it is not relevant.
+To decode Huffman-encoded data, only the original Huffman tree is needed. Then, the decompressor can simply traverse the Huffman tree for each bit in the encoded data, stopping and starting from the root node every time a leaf is reached. Including the original Huffman tree with the compressed data can have a significant impact on the compression ratio. To combat this impact, most Huffman compression implementations represent the tree in a canonical form. A canonical Huffman tree represents the data as the number of characters of each depth, then lists the characters in order from the lowest depth to the highest depth. Canonical form is one of the most efficient ways of representing the Huffman tree, and it can be several times smaller than an equivalent tree represented in "plain-text" form, listing each character, the length of its encoding, and the encoding itself.
 
 \subsubsection{Example}\label{sss:huffman_example}
 For the purposes of demonstration, the string of characters being compressed for Huffman will be:
@@ -165,7 +176,7 @@ Without using Huffman encoding, each of these characters could be encoded with o
 	\label{tab:default_encoding}
 \end{table}
 
-The first step in dynamic huffman encoding is to count and sort the frequency that each character occurs. The sorted frequencies of each example character occurrence are shown in Table \ref{tab:character_frequency_count}.
+The first step in dynamic huffman encoding is to count and sort the frequency that each character occurs. The result of the character frequency counting step is shown with the frequencies sorted in Table \ref{tab:character_frequency_count}.
 
 \begin{table}[htb]
 	\centering
@@ -186,7 +197,7 @@ The first step in dynamic huffman encoding is to count and sort the frequency th
 	\label{tab:character_frequency_count}
 \end{table}
 
-Once the sorted list of frequencies is complete, the Huffman tree can be built. To build the Huffman binary tree, create a parent node and set its children to be the two least frequent nodes in the list of existing nodes. Remove the two nodes that were set as children from the list of characters remaining, add the new parent node to the list, and re-sort the list by frequency. This step can be repeated until there is only a single node remaining in the list. This is the root node. Figure \ref{fig:completed_huffman_tree_example} shows a completed Huffman tree.
+Once the sorted list of frequencies is complete, the Huffman tree can be built. To build the Huffman binary tree, create a parent node and set its children to be the two least frequent nodes in the list of existing nodes. Remove the two nodes that were set as children from the list of characters remaining, add their summed frequency values as a new parent node to the list, and re-sort the list by frequency. This step is repeated until there is only a single node remaining in the list. This is the root node. Figure \ref{fig:completed_huffman_tree_example} shows a completed Huffman tree.
 
 \begin{figure}[htb]
 	\centering
@@ -195,7 +206,7 @@ Once the sorted list of frequencies is complete, the Huffman tree can be built. 
 	\label{fig:completed_huffman_tree_example}
 \end{figure}
 
-Once the Huffman tree is completed, the standard Huffman algorithm is nearly finished. A codeword can be generated for each character in the tree based on its position in the tree. Starting with the root node, each the sequence of left and right children shows the encoding of a character. Each left appends a 0 to the encoding, and each right appends a 1. It is useful to note here that each character's depth in the tree is equal to the number of bits in its encoding. A character encoding based on the tree in Figure \ref{fig:completed_huffman_tree_example} is shown in Table \ref{tab:huffman_encodings}.
+Once the Huffman tree is completed, the standard Huffman algorithm is nearly finished. A codeword can be generated for each character in the tree based on its position in the tree. Starting with the root node, the path of each sequence of left and right children reveals the encoding of a character. Each left appends a 0 to the encoding, and each right appends a 1. It is useful to note here that each character's depth in the tree is equal to the number of bits in its encoding. A character encoding based on the tree in Figure \ref{fig:completed_huffman_tree_example} is shown in Table \ref{tab:huffman_encodings}.
 
 \begin{table}[htb]
 	\centering
@@ -216,13 +227,22 @@ Once the Huffman tree is completed, the standard Huffman algorithm is nearly fin
 	\label{tab:huffman_encodings}
 \end{table}
 
-Now, the only task remaining is to encode each character using the codewords shown in Table \ref{tab:huffman_encodings}. The fully encoded example string of characters is shown below. Underscores are used to demonstrate separation between each character for the clarity of the reader. However, it is important to note that delimiters of any kind are unnecessary for Huffman encoding, because every character is a leaf node, so there is no way to mistake the meaning of a sequence of bits.
+Now, the only task remaining is to encode each character using the codewords shown in Table \ref{tab:huffman_encodings}. The result of the final character encoding step is shown below. Underscores are used to demonstrate separation between each character for the clarity of the reader. However, it is important to note that delimiters of any kind are unnecessary for Huffman encoding, because every character is a leaf node, so there is no way to mistake the meaning of a sequence of bits.
 
 \[0\_0\_0\_10\_0\_0\_110\_10\_10\_0\_0\_10\_111\_0\_0\_10\]
 
-As can be seen by the above resulting bit sequence, a significant number of bits have been saved. The original encoding would have required 32 bits, but this version only needs 25 bits. This simple example results in a compression ratio (calculated by dividing the resulting size by the initial size) of 1.28. This compression ratio and example does not include the overhead required to represent the Huffman tree, but this work uses a non-standard representation anyway, so these details are irrelevant to this simple example.
+As can be seen by the above resulting bit sequence, a significant number of bits have been saved. The original encoding would have required 32 bits, but this version only needs 25 bits. This simple example results in a compression ratio ($\frac{initial data size}{compressed data size}$) of 1.28. This simple example is unusually short compared to how it would normally be used, so adding the overhead from the Huffman tree will remove any compression benefits from Huffman compression. However, for completeness' sake, both a canonical and a plain text Huffman tree example are demonstrated below.
 
-% TODO: Might be good to give an example of how LZ77 works for readers who aren't familiar
+For a canonical Huffman tree, there are many methods of encoding the data. The simple way that is shown here first lists the number of each characters at each depth, then lists each character in order from shallowest to deepest. Because this example uses only four characters, the deepest a leaf node could go in a Huffman tree is a depth of 3. For each depth of the Huffman tree, the number of bits needed to represent the number of characters at that depth is $1+depth$. Because of the Huffman tree can have characters at a depth of up to three, to represent all the depths, the first part of the canonical Huffman tree is as follows: two bits for the number of 1-bit characters, three bits for the number of 2-bit characters, and four bits for the number of 3-bit characters. This sums to a subtotal of nine bits for the depths of the canonical Huffman tree. After the depths, each character is listed. Because the characters can be represented uncompressed as 2-bit values, the character section of the canonical Huffman tree can be anywhere from two to eight bits, depending  on how many characters are in the Huffman tree. Below is the binary representation of the canonical Huffman tree of the encodings in Table \ref{tab:huffman_encodings}. Note, this encoding is seventeen bits, while the compressed version of the data only saved seven bits, resulting in an increase in size of ten bits.
+
+\[01\_001\_0010\_00\_01\_10\_11\]
+
+A plain text Huffman tree is very simple to implement. The most basic method is to represent each character as the number of bits in its encoding, the encoding itself, and the uncompressed character. The current example requires two, three, and two bits for the number of bits, the encoding, and the uncompressed character, respectively. For four characters, that means the plain text form will take up 28 bits, significantly more than the canonical encoding. If the Huffman tree didn't use a character, this can be demonstrated by setting its encoding length value to zero for the plain text representation. Below is the plain text representation of the encodings in Table \ref{tab:huffman_encodings}.
+
+\[01\_000\_00\_10\_010\_01\_11\_110\_10\_11\_111\_11\]
+
+More details on Huffman encoding and canonical Huffman trees can be found in \cite{huffman, canonicalhuffman}.
+
 \subsection{LZ77}\label{ss:lz77}
 LZ77-based compression techniques use an algorithm pioneered by Abraham Lempel and Jacob Ziv in 1977 \cite{lz77}. When patterns of characters are repeated in data, LZ77 techniques use references to previous instances of the patterns to represent the data more efficiently. These references are bounded in a sliding window of the most recent data to pass through the compressor.
 
@@ -230,20 +250,19 @@ For LZ77 compression, a sliding window of a fixed size stores the past history o
 
 When LZ77 data is decompressed, the decompressor also keeps track of a sliding window of the data that has been decompressed. Whenever the decompressor is given a pointer-length pair, the decompressor looks up the pointer and reads a number of characters after it equal to the length of the pair. A benefit of this encoding is that it does not require any metadata to be shared between the compressor and decompressor, they both automatically build up identical histories as they process the data.
 
-% TODO: Might be good to give an example of how LZ78 works for readers who aren't familiar
+% TODO: Might be good to give an example of how LZ77 works for readers who aren't familiar
+\subsubsection{Example}\label{sss:lz77_example}
+
 \subsection{LZ78 (LZW)}\label{ss:lz78}
 LZ78-based compression techniques such as LZW instead use an algorithm published by Lempel and Ziv in 1978, after their first seminal paper on compression \cite{lz78}. Like LZ77, LZ78 works by representing sequences of characters as references, but instead of representing them as pointer-length pairs, LZ78 represents references as dictionary entries. These dictionary entries are built by the compressor and rebuilt by the decompressor as the data is read, so there is no need to transmit a dictionary separately.
 
 When compressing with LZ78, every sequence of inputs is added to a dictionary. Initially, the dictionary contains as many entries as there are possible unique characters. Then, as data is streamed through the LZ78 compressor, it adds entries to the dictionary. Anytime a sequence of two or more characters is no longer able to be found in the dictionary, it is added to the dictionary, and the sequence of characters starts from the final character in the sequence that caused it to not match any existing entries. This continues for all of the input characters, and the each character output from the dictionary must be the number of bits required to represent the number of entries in the dictionary. This means that as the dictionary gets longer, the length of each output of the compressor also gets larger to allow it to represent all the valid indices in the dictionary.
 
+% TODO: Might be good to give an example of how LZ78 works for readers who aren't familiar
+\subsubsection{Example}\label{sss:lz78_example}
+
 \subsection{Deflate}\label{ss:deflate}
 Deflate is a combination of LZ77 and Huffman encoding \cite{deflate}. First, LZ77 compression is performed. Next, this result is compressed with Huffman. By combining these two algorithms, Deflate is able to take advantage both of the pattern matching of LZ77 and the entropy encoding of Huffman encoding. Because it takes advantage of both, its compression ratios are higher than either individually. These high compression ratios make it a good candidate for memory compression.
-
-\chapter{Literature Review} \label{ch:literature_review}
-This chapter reviews the relevant literature on hardware compression and decompression accelerators to demonstrate why existing works do not adequately address the needs of the memory compression research community.
-
-% TODO: it would be good to have a summary at the beginning of the literature review that summarizes why these existing works are inadequate
-\section{}
 
 \section{Existing Hardware Compressors and Decompressors}\label{se:existing_hardware_compressors_and_decompressors}
 This section discusses existing hardware accelerators that contain matching compressors and decompressors.
@@ -314,8 +333,7 @@ However, until recently, hardware has not enjoyed nearly the same scale of openn
 
 It is clear that there is a need for open-source compression and decompression hardware designs. Existing open-source hardware designs have high latencies, are not very configurable, or are made for a very specific purpose. These designs intend to have low latencies, be extremely configurable, and to be able to be used for many purposes. By open-sourcing this work under the MIT license, anyone will be able to  use it, opening the door for people who are interested in using hardware compressors and decompressors to do so without needing to implement the hardware themselves. By providing designs that have already been implemented and verified, this work has the potential to save thousands of hours of wasted engineering time for those in the field of hardware compression and decompression. In the same way that Linux or GCC are often the default choices for operating system or compiler, it is hoped that this work will become the default choice for hardware compression and decompression.
 
-% TODO: "This Contribution" is too generic for a section title, it needs to have a better name
-\chapter{This Contribution} \label{ch:this_contribution}
+\chapter{Open-Source Hardware Solutions} \label{ch:open-source_hardware_solutions}
 This chapter reviews the contributions of this work. It contains arguments for what makes the work valuable and details about how the work was implemented. It also discusses the high-level design choices and the reasons they were made.
 
 \section{Overview}\label{se:overview}
@@ -335,19 +353,13 @@ The first, most important benefit of fully parameterized designs is that the des
 
 Another benefit of the parameterized nature of the designs is the speed of design space exploration. Because everything is parameterized, multiple configurations of the designs can be simultaneously tested for compression ratio, frequency, area, and power. This speeds up the development cycle significantly, reducing the human effort needed to make decisions on design trade-offs.
 
-% TODO: This reads like more of a background section. Cut this down significantly, and talk about how the design was implemented in Chisel, not just the benefits of Chisel
-\subsection{Chisel}\label{ss:chisel}
-All of the designs in this work were implemented in Chisel 3.4.3. Chisel is an HDL embedded in the Scala programming language. Because each hardware description is a Scala program, Chisel has many features that allow for the designs to be highly configurable. As an example, it is easy to read information in from external files for use with Chisel hardware designs. This feature is used to allow easy configurability with CSV files for each design.
-
-Chisel's object-oriented nature saves significant developer time. Instead of passing wires with the same names at the inputs and outputs of every module, Chisel has Bundles of wires that can be used to package wires into easy-to-manage objects. Additionally, Chisel includes a several hardware functions that implement efficient priority encoders, ready-valid interfaces, queues, and other time-saving utilities. 
-
-Finally, Chisel compiles to Verilog. Because Verilog is the most widespread HDL, this means Chisel is compatible with all existing open-source and vendor tools. To compile to Verilog, Chisel includes a multi-level intermediate representation language called FIRRTL. FIRRTL is used in optimization passes that make Chisel designs simpler and faster for most tools to process.
+\subsection{Implementation Language}\label{ss:implementation_language}
+This work was initially started in Verilog. However, after a brief trial run switching a module over from Verilog to Chisel, every component of the design was implemented in Chisel. Chisel has a number of benefits over Verilog. Verilog required 2-3x more lines of code on average compared to Chisel. Chisel was significantly faster to write, and it generates well-formatted Verilog, so there are never any issues with synthesizing a Chisel design. Chisel error codes are easy to understand and fix. Most importantly, Chisel language features make it very easy to parameterize the design. Parameterizability was critical for this work, as fast design space exploration was very important to optimizing the hardware.
 
 \subsection{Compressors and Decompressors}\label{ss:compressors_and_decompressors}
 The compressors and decompressors included in this work implement variations on popular compression and decompression algorithms. The variations are all made to reduce latency or area and are configurable. The algorithms implemented are Huffman encoding, LZW, and LZ77.
 
 \section{Huffman}\label{ss:huffman}
-% TODO: look over the Huffman high-level design choices and implementation details to be sure everything is correct
 \subsection{High-Level Design Choices}\label{se:huffman_design_choices}
 This section of the paper describes the high-level design of each of the compressors and decompressors, the modifications to the algorithms used, and the motivations for the changes. Information about the low-level implementation details of the design is included in a later section.
 
@@ -358,33 +370,33 @@ The Huffman compressor is a fully parameterized hardware compressor implementati
 	\centering
 	\caption{Configurable Huffman Parameters and their typical values.}
 	\begin{tabular}{cc}
-	    \hline
+	    \toprule
 	    Parameter & Typical Value \\
-	    \hline
+	    \midrule
 	    characters to compress & 4096 \\
-	    \hline
+	    \midrule
 	    bits in a character & 8 \\
-	    \hline
+	    \midrule
 	    characters in the Huffman tree & 16 \\
-	    \hline
+	    \midrule
 	    maximum allowed bits in a codeword & 10 \\
-	    \hline
+	    \midrule
 	    character counting frequency parallelism & 8 \\
-	    \hline
+	    \midrule
 	    compressor output encoding parallelism & 8 \\
-	    \hline
+	    \midrule
 	    include statistics on compressed data & false \\
-	    \hline
+	    \midrule
 	    allow for inputs smaller than the `characters to compress` size & false \\
-	    \hline
+	    \midrule
 	    parallel compressor inputs & false \\
-	    \hline
+	    \midrule
 	    parallel compressor outputs & false \\
-	    \hline
+	    \midrule
 	    parallel decompressor inputs & false \\ 
-	    \hline
+	    \midrule
 	    parallel decompressor outputs & false \\
-	    \hline
+	    \bottomrule
 	\end{tabular}
 	\label{tab:huffman-configuration-table}
 \end{table}
@@ -397,9 +409,7 @@ Similarly, this compression implementation is able to normalize Huffman trees to
 
 Additionally, most software Huffman compressors represent the Huffman tree in canonical Huffman tree form. This is a special format that reduces the size of the tree. However, this design uses a plain text Huffman tree. In this tree, each character of the tree has its length, its encoding, and the actual character data. A plain text Huffman tree is used for two reasons: first, the design uses fewer characters than most designs, and second, canonical Huffman trees are more complicated to parse than plain text. The first reason means that not using a canonical form for the tree does not affect this design as much as it would affect a design that used usual Huffman algorithm. The second reason means that the decompressor can be significantly faster, because it needs to do much less parsing and computation to determine what the Huffman tree looks like. 
 
-% TODO: define what we mean by character frequency counting, maybe refer back to the background section here.
-% TODO: define what we mean by encoding, to someone unfamiliar, the entire Huffman process is "encoding". Maybe call it "final character encoding?"
-Finally, this Huffman compressor has two configurable options for exploiting parallelism: the character frequency counting and the encoding. Both of these can be configured with parameters, allowing the design to be optimized for extreme bandwidth and low-latency or to be optimized for area at the cost of latency and bandwidth.
+Finally, this Huffman compressor has two configurable options for exploiting parallelism: the character frequency counting and the final character encoding. Both of these can be configured with parameters, allowing the design to be optimized for extreme bandwidth and low-latency or to be optimized for area at the cost of latency and bandwidth.
 
 \subsubsection{Decompressor}\label{sss:huffman_decompressor_design}
 Compared to the compressor, the Huffman decompressor is very simple. It uses all of the same parameters as the Huffman compressor. It contains a simple state machine that controls the reading of Huffman tree data into internal lookup tables. Once this is completed, for each parallel encoder in the compressor, there is a parallel decoder that searches for its input data in the internal lookup tables. Each decoder is capable of a steady one byte per clock cycle, so its throughput is nearly perfectly scalable with the compression parallelism.
@@ -414,28 +424,87 @@ This section of the paper describes the low-level implementation details of each
 	\label{fig:huffman_compressor_block_diagram}
 \end{figure}
 
-% TODO: for components that aren't in standard Huffman, give an example of the inputs to that module and what the outputs would be
-% TODO: for components that are already in standard Huffman, reference when they happen in the examples given in the Background section
 \subsubsection{Compressor}\label{sss:huffman_compressor_implementation}
 Huffman encoding is the most complicated of the hardware accelerators implemented in this work. The compressor consists of multiple modules (see Figure \ref{fig:huffman_compressor_block_diagram}), each representing one stage of Huffman compressor, all connected with ready/valid interfaces. The design consists of a character frequency counter, a character frequency sort, a tree generator, a tree depth annotation traversal, a sort for the depths of characters in the tree, a character depth normalizer, a codeword generator, and a compressed data output.
 
 The character frequency counter takes as input a number of characters determined by the `character counting frequency parallelism` parameter. This module iterates through the entire input data, counting how many occurrences of each possible character value there are. Once this is complete, it passes an array of the total number of occurrences for each character to the character frequency sort.
 
-The character frequency sort module sorts the frequencies it is given, but requires two passes to perform the sort. The first pass sorts the `characters in the Huffman tree` most frequent characters and sums the number of occurrences of characters that are excluded. Then, so all the characters can be represented in some way, the second pass uses this sum of occurrences for the escape character. The escape character is sorted into the existing character data, then the characters and their frequencies are passed to the tree generator.
+The character frequency sort module sorts the frequencies it is given, but requires two passes to perform the sort. The first pass sorts the `characters in the Huffman tree` most frequent characters and sums the number of occurrences of characters that are excluded. Then, so all the characters can be represented in some way, the second pass uses this sum of occurrences for the escape character. The escape character is sorted into the existing character data, then the characters and their frequencies are passed to the tree generator. The end of this module matches up with the state of the compression example shown in Table \ref{tab:character_frequency_count}, but with the addition of the escape character. 
 
-The tree generator builds a Huffman tree with hardware registers that can be configured as pointers or as character and frequency values. Just like with a standard Huffman tree, the tree generator iteratively builds a binary tree, adding nodes from the two least frequent members of the node list until the entire tree has a single root node. In this tree, all of the characters are leaf nodes. Each pointer from the root node can be eventually traversed  to reach a character. This tree of pointers and characters is passed to the next module.
+The tree generator builds a Huffman tree with hardware registers that can be configured as pointers or as character and frequency values. Just like with a standard Huffman tree, the tree generator iteratively builds a binary tree, adding nodes from the two least frequent members of the node list until the entire tree has a single root node. In this tree, all of the characters are leaf nodes. Each pointer from the root node can be eventually traversed  to reach a character. This tree of pointers and characters is passed to the next module. The output data of this module corresponds with Figure \ref{fig:completed_huffman_tree_example}, but the hardware adds some additional steps after this stage.
 
-The value of the Huffman tree is in the depths of characters in the tree, so once the tree is built, it must be traversed to find the depth of each individual character. The tree depth annotation module performs an in-order traversal, only recording information about the leaf nodes, as these are the nodes that correspond to characters. Once the entire tree has been traversed, the depth of each character recorded by the tree depth annotation module are passed to the next module.
+The benefit of the Huffman tree is in knowing the depths of characters in the tree, so once the tree is built, it must be traversed to find the depth of each individual character. The tree depth annotation module performs an in-order traversal, only recording information about the leaf nodes, as these are the nodes that correspond to characters. As an example of how this works, the tree shown in Figure \ref{fig:completed_huffman_tree_example} would result in the tree depth annotation module output shown in Table \ref{tab:tree_depth_annotation_output}. Once the entire tree has been traversed, the depth of each character recorded by the tree depth annotation module are passed to the next module.
 
-The characters in the tree must be sorted based on their depth, so the next module sorts them accordingly. Unlike the first sort module in the Huffman design, there are no other complicating functions in this module, just a simple hardware sort. Once the data is sorted, it is passed to the next module.
+\begin{table}[htb]
+	\centering
+	\caption{Example Tree Depth Annotation Output}
+	\begin{tabular}{cc}
+	    \toprule
+	    Character & Depth \\
+	    \midrule
+	    A & 1 \\
+	    \midrule
+	    B & 2 \\
+	    \midrule
+	    C & 3 \\
+	    \midrule
+	    D & 3 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:tree_depth_annotation_output}
+\end{table}
 
-% TODO: go over this again with a specific audience in mind, maybe add references to previous sections in the paper for clarification
-% TODO: things like "on the way down the list"
-After sorting, it is possible that the characters in the Huffman tree could have been deeper than the chosen maximum depth, which determines the number of bits needed to encode a character. To remedy this, the tree normalization module iterates down the sorted list of characters, then back up from the bottom. On the way down the list, the number of unused spaces in the encoding space is calculated by the number of characters at each depth in the tree. Once the module begins iterating back up the list, and characters that are at a lower-than-allowed maximum depth are set to a depth equal to the maximum. Each time this occurs, the number of unused encoding spaces is updated, and if this number becomes negative, then the module continues traversing up the tree. Until the number of unused encoding spaces is non-negative, the module sets each character it encounters to the deepest possible depth, or to the shallowest depth that still causes fixes the negative encoding space issue. Once this is complete, the module passes on the normalized depth data to the second-to-last module in the design.
+The characters in the tree must be sorted based on their depth, so the next module sorts them accordingly. Unlike the character frequency sort module, there are no other complicating features in this module, just a simple hardware sort. Once the data is sorted by depth, it is passed to the next module.
 
-The codeword generator is the final step in the design before the data can be encoded. This module uses the sorted, normalized data that it receives to generate codewords for each character. It starts with the data at a depth of one bit and an encoding of zero. Every time the next data item is deeper, the encoding is left-shifted by the difference in depth, and every time the next data item is the same depth, the encoding is incremented by one to get the encoding of the next character. In this way, every character and the escape character can be given unique encodings. Once this is complete for the characters in the Huffman tree, these characters, encodings, and the encodings for characters that utilize the escape character are written to registers that are visible to the final module of the design.
+After sorting, it is possible that the characters in the Huffman tree could have been deeper than the chosen maximum depth, which determines the number of bits needed to encode a character. To remedy this, the tree normalization module iterates down the sorted list of characters from the lowest depths to the highest depths, then back up to the lowest depth characters once it reaches the character at the highest depth.
 
-The final module of the design uses the pre-computed encodings to compress the input data. First, this module outputs the plain text form of the Huffman tree as specified. Once this is completed, the module accepts input data to be compressed. This module can be configured to compress multiple streams from the input data in parallel. For each byte of each input stream, the corresponding encoding and encoding length is found from the codeword generator. Once this is found, the encoding and its length are output for each stream.
+On the way down the list in the tree normalization module, the number of unused spaces in the encoding space is calculated. The number of available encodings in the encoding space is $2^{maximum\_bits}$, where $maximum\_bits$ is the maximum number of bits allowed to represent a character encoding, determined by the "maximum allowed bits in a codeword" parameter. The number of unused encodings in the encoding space is $Available Encodings - \sum_{n=1}^{number of characters}2^{maximum\_bits-character\_bits}$, where $character\_bits$ is the depth of character $n$ in the Huffman tree. For characters at a depth deeper than "maximum allowed bits in a codeword", their depth is set equal to "maximum allowed bits in a codeword during this iteration down the sorted list of characters. This method of representing the encoding space is due to the properties of the Huffman tree. Because each character in the tree is a leaf node, the less deep in the tree a leaf node is, the more encoding it is taking up in the total encoding space, because it prevents any encodings that would need to be children of its current position in the tree from being used. This method of representing the encodings is helpful for truncating and normalizing the Huffman tree.
+
+Once the tree normalization module has gone through each character in the list, if the number of available encodings in the encoding space is non-negative, it sends its output to the next module. Otherwise, it iterates back up the tree from the deepest characters to the shallowest characters in the tree. If a character is at the maximum possible depth, it is ignored. However, if it is not the maximum possible depth, it tries to alter the characters depth, making it deeper in the tree until it reaches the "maximum allowed bits in a codeword" depth or the available encodings in the encoding space is no longer negative. As long as the number of encodings available in the encoding space is still non-negative, it continues to iterate up the list of characters and their depths.
+
+An example of the tree normalization step with a "maximum allowed bits in a codeword" of 2 performed on the results of the tree depth annotation in Table \ref{tab:tree_depth_annotation_output} is shown in Table \ref{tab:tree_normalization_output}. Note that, to make room in the encoding space for $C$ and $D$ to become 2-bit encodings, $A$ had to go from a 1-bit depth to a 2-bit depth. Although this would completely nullify the compression benefit for this oversimplified example, with 8-bit characters at a 10-bit maximum character depth with an escape character, this effect is often very minor.
+
+\begin{table}[htb]
+	\centering
+	\caption{Example Tree Normalization Output}
+	\begin{tabular}{cc}
+	    \toprule
+	    Character & Depth \\
+	    \midrule
+	    A & 2 \\
+	    \midrule
+	    B & 2 \\
+	    \midrule
+	    C & 2 \\
+	    \midrule
+	    D & 2 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:tree_normalization_output}
+\end{table}
+
+The codeword generator is the final step in the design before the data can be encoded. This module uses the sorted, normalized data that it receives to generate codewords for each character. It starts with the data at a depth of one bit and an encoding of zero. Every time the next data item is deeper, the encoding is left-shifted by the difference in depth, and every time a data item is processed, the encoding is incremented by one to get the encoding of the next character. In this way, every character and the escape character can be given unique encodings. Once this is complete for the characters in the Huffman tree, these characters, encodings, and the encodings for characters that utilize the escape character are written to registers that are visible to the final module of the design. An example of the result of the codeword generator module with the tree depths of Table \ref{tab:tree_depth_annotation_output} as inputs is shown in Table \ref{tab:codeword_generator_encodings}. Note that the depths in Table \ref{tab:tree_normalization_output} were not used for this example because, being all the same depth, they would all be the same value. However, normally the codeword generators input would come from the tree normalization module.
+
+\begin{table}[htb]
+	\centering
+	\caption{Codeword Generator Encoding Example}
+	\begin{tabular}{cc}
+	    \toprule
+	    Character & Generated Encoding\\
+	    \midrule
+	    A & 0 \\
+	    \midrule
+	    B & 10 \\
+	    \midrule
+	    C & 110 \\
+	    \midrule
+	    D & 111 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:codeword_generator_encodings}
+\end{table}
+
+The final module of the design uses the encodings from the codeword generator module to compress the input data. This module performs the final character encoding as discussed in the Huffman compression example in Subsection \ref{sss:huffman_example}. First, this module outputs the plain text form of the Huffman tree as specified in Section \ref{sss:huffman_compressor_design}. Once this is completed, the module accepts input data to be compressed. This module can be configured to compress multiple streams from the input data in parallel. For each byte of each input stream, the corresponding encoding and encoding length is found from the codeword generator. Once this is found, the encoding and its length are output for each stream, resulting in a fully-encoded output.
 
 \subsubsection{Decompressor}\label{sss:huffman_decompressor_implementation}
 
@@ -453,7 +522,6 @@ With the tree stored in the dictionary, the decompressor then decodes each confi
 \section{LZW}\label{ss:lzw}
 This section discusses the LZW compressor and decompressor. First, it introduces the high-level design choices of this hardware, then it describes the details of the implementation.
 
-% TODO: look over the LZW high-level design choices and implementation details to be sure everything is correct
 \subsection{High-Level Design Choices}\label{se:high-level_design_choices}
 This section of the paper describes the high-level design of each of the compressors and decompressors, the modifications to the algorithms used, and the motivations for the changes. Information about the low-level implementation details of the design is included in a later section.
 
@@ -464,17 +532,17 @@ The LZW compressor and decompressor are very close to functioning exactly like L
 	\centering
 	\caption{Configurable LZW Parameters and their typical values.}
 	\begin{tabular}{cc}
-	    \hline
+	    \toprule
 	    Parameter & Typical Value \\
-	    \hline
+	    \midrule
 	    character bits & 8 \\
-	    \hline
+	    \midrule
 	    maximum characters in a sequence & 16 \\
-	    \hline
+	    \midrule
 	    maximum elements in the dictionary & 768 \\ 
-	    \hline
+	    \midrule
 	    enable debugging statistics & false \\
-	    \hline
+	    \bottomrule
 	\end{tabular}
 	\label{tab:lzw-configuration-table}
 \end{table}
@@ -522,7 +590,6 @@ For each sequence that is not the maximum length, it and the first character of 
 % TODO: for components that aren't in standard LZ77, give an example of the inputs to that module and what the outputs would be
 % TODO: for components that are already in standard LZ77, reference when they happen in the examples given in the Background section
 \section{LZ77}\label{se:lz77}
-% TODO: look over the LZ77 high-level design choices and implementation details to be sure everything is correct
 \subsection{High-Level Design Choices}\label{se:lz77_design_choices}
 This section of the paper describes the high-level design of each of the compressors and decompressors, the modifications to the algorithms used, and the motivations for the changes. Information about the low-level implementation details of the design is included in a later section.
 
@@ -533,21 +600,21 @@ The LZ77 compressor and decompressor hardware mostly implements its algorithm un
 	\centering
 	\caption{Configurable LZ77 Parameters and their typical values.}
 	\begin{tabular}{cc}
-	    \hline
+	    \toprule
 	    Parameter & Typical Value \\
-	    \hline
+	    \midrule
 	    Character bits & 8 \\
-	    \hline
+	    \midrule
 	    CAM characters & 4096 \\
-	    \hline
+	    \midrule
 	    CAM max pattern length & 16 \\
-	    \hline
+	    \midrule
 	    Max pattern length & 266 \\ 
-	    \hline
+	    \midrule
 	    Escape character & 103 \\ 
-	    \hline
+	    \midrule
 	    Decompressor max characters out & 8\\
-	    \hline
+	    \bottomrule
 	\end{tabular}
 	\label{tab:lz77-configuration-table}
 \end{table}
@@ -619,7 +686,7 @@ For hardware latency calculations, the latency can be found by multiplying the f
 This chapter delivers the results of the investigations detailed in Chapter \ref{ch:methodology} and analyzes them.
 
 \section{ASIC Area and Frequency Comparison}\label{se:asic_area_and_frequency_comparison}
-Each design shown is configured according to the typical configurations found in the design choices sections of Chapter \ref{ch:this_contribution}.
+Each design shown is configured according to the typical configurations found in the design choices sections of Chapter \ref{ch:open-source_hardware_solutions}.
 
 Figure \ref{fig:maximum_clock_speeds} shows the highest clock speeds achievable by each design configuration. As can be seen, most of the designs are capable of achieving at least 2 GHz, except for the LZ77 compressor and the LZW decompressor. The reason for the LZ77 compressor's lower than expected clock speed is not currently known. Initial investigations into the clock speed by dividing the design up and synthesizing it as separate pieces suggest that the reduction in clock speed is not due to the CAM or pattern search module, so must be due to the state machine. However, the state machine does not contain much additional logic, so it is currently unclear what components cause the slowdown.
 
