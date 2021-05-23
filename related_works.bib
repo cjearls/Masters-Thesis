@@ -1,20 +1,18 @@
-@InProceedings{microsoft,
-author = {Fowers,
-Jeremy and Kim,
-Joo-Young and Burger,
-Doug and Hauck,
-Scott},
+@inproceedings{microsoft,
+author = {Fowers, Jeremy and Kim, Joo-Young and Burger, Doug and Hauck, Scott},
 title = {A Scalable High-Bandwidth Architecture for Lossless Compression on FPGAs},
-booktitle = {The 23rd IEEE International Symposium on Field-Programmable Custom Computing Machines},
 year = {2015},
-month = {May},
-abstract = {Data compression techniques have been the subject of intense study over the past several decades due to exponential increases in the quantity of data stored and transmitted by computer systems. Compression algorithms are traditionally forced to make tradeoffs between throughput and compression quality (the ratio of original file size to compressed file size). FPGAs represent a compelling substrate for streaming applications such as data compression thanks to their capacity for deep pipelines and custom caching solutions. Unfortunately,
-data hazards in compression algorithms such as LZ77 inhibit the creation of deep pipelines without sacrificing some amount of compression quality. In this work we detail a scalable fully pipelined FPGA accelerator that performs LZ77 compression and static Huffman encoding at rates up to 5.6 GB/s. Furthermore,
-we explore tradeoffs between compression quality and FPGA area that allow the same throughput at a fraction of the logic utilization in exchange for moderate reductions in compression quality. Compared to recent FPGA compression studies,
-our emphasis on scalability gives our accelerator a 3.0x advantage in resource utilization at equivalent throughput and compression ratio.},
-publisher = {IEEE – Institute of Electrical and Electronics Engineers},
-url = {https://www.microsoft.com/en-us/research/publication/a-scalable-high-bandwidth-architecture-for-lossless-compression-on-fpgas/},
-edition = {The 23rd IEEE International Symposium on Field-Programmable Custom Computing Machines},
+isbn = {9781479999699},
+publisher = {IEEE Computer Society},
+address = {USA},
+url = {https://doi.org/10.1109/FCCM.2015.46},
+doi = {10.1109/FCCM.2015.46},
+abstract = {Data compression techniques have been the subject of intense study over the past several decades due to exponential increases in the quantity of data stored and transmitted by computer systems. Compression algorithms are traditionally forced to make tradeoffs between throughput and compression quality (the ratio of original file size to compressed file size). FPGAs represent a compelling substrate for streaming applications such as data compression thanks to their capacity for deep pipelines and custom caching solutions. Unfortunately, data hazards in compression algorithms such as LZ77 inhibit the creation of deep pipelines without sacrificing some amount of compression quality. In this work we detail a scalable fully pipelined FPGA accelerator that performs LZ77 compression and static Huffman encoding at rates up to 5.6 GB/s. Furthermore, we explore tradeoffs between compression quality and FPGA area that allow the same throughput at a fraction of the logic utilization in exchange for moderate reductions in compression quality. Compared to recent FPGA compression studies, our emphasis on scalability gives our accelerator a 3.0x advantage in resource utilization at equivalent throughput and compression ratio.},
+booktitle = {Proceedings of the 2015 IEEE 23rd Annual International Symposium on Field-Programmable Custom Computing Machines},
+pages = {52–59},
+numpages = {8},
+keywords = {LZ77, FPGA, Xpress, high throughput, Huffman encoding, hardware accelerator, data compression},
+series = {FCCM '15}
 }
 
 @INPROCEEDINGS{ibm,
@@ -491,3 +489,5 @@ month={Dec}}
 @misc{windows10_memory_compression, title={How to monitor memory compression in Windows 10}, url={https://www.techrepublic.com/article/how-to-monitor-memory-compression-in-windows-10/}, journal={TechRepublic}, publisher={TechRepublic}, author={Shultz, Greg}, year={2018}, month={Feb}} 
 
 @INPROCEEDINGS{canonicalhuffman,  author={Ergude, Bao and Weisheng, Li and Dongrui, Fan and Xiaoyu, Ma},  booktitle={2008 International Conference on Computer Science and Software Engineering},   title={A Study and Implementation of the Huffman Algorithm Based on Condensed Huffman Table},   year={2008},  volume={6},  number={},  pages={42-45},  doi={10.1109/CSSE.2008.1432}}
+
+@misc{lz4, url={https://github.com/lz4/lz4}, journal={LZ4}, publisher={GitHub}, author={Collet, Yann}, year={2011}, month={Apr}} 
