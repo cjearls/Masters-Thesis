@@ -303,6 +303,20 @@ When compressing with LZ78, every sequence of inputs is added to a dictionary. I
 \subsection{Deflate}\label{ss:deflate}
 Deflate is a combination of LZ77 and Huffman encoding \cite{deflate}. First, LZ77 compression is performed. Next, this result is compressed with Huffman. By combining these two algorithms, Deflate is able to take advantage both of the pattern matching of LZ77 and the improvements in character representation of Huffman encoding. Because it takes advantage of both, its compression ratios are higher than either individually. These high compression ratios make it a good candidate for memory compression.
 
+% TODO: start by motivating the need for open-source software with facts and citations. Discuss results, benefitts, impact
+% TODO: Discuss the progress of open-source in many communities (SW, HW, etc.)
+% TODO: Discuss some HW successes (Simulators like GEM5 & SimpleScalar, open-source FPGA tools like IceStorm, NextPNR, Yosys, Project Trellis, Project Xray, open-source cores like BOOM, Rocket, SweRV, VexRiscv, blackparrot, litex)
+% TODO: Discuss some memory successes, as many as possible, convince that the search was exhaustive with citations
+% TODO: Use facts to convince reader that no open-source hardware compressors for memory compression and decompression exist
+\section{Open-Source Motivation}\label{se:open-source_motivation}
+The movement for open-source software has been gaining momentum over the past several decades. Linux is used by most of the internet, the cloud, supercomputers, and even in Android phones and Chromebooks. GCC and LLVM, open-source compiler projects, are widely used. Companies like Amazon, Facebook, Google, Microsoft, and Mozilla are releasing open-source libraries, languages, and tools.
+
+This makes it easy to perform research, because if one is interested in a kernel optimization, they can implement it in the Linux kernel. If one is interested in a virtual memory feature, or a scheduler improvement, or fixing a filesystem bug, these can all be done without building an entire operating system from scratch. In the same way, if one is interested in a compiler optimization, they can implement it in GCC or LLVM without buildling an entire compiler. If one is interested in scientific computing, simulation, animation, or machine learning, there are open-source tools that form a strong starting point so one does not need to create these from nothing every time.
+
+However, until recently, hardware has not enjoyed nearly the same scale of openness and work sharing that software has. As in many hardware domains, there are very few hardware compressors and decompressors that are open-source. This means that, every time a researcher is interested in a new advancement in compression or decompression, they must first implement it in hardware, then test it and debug it. Only when the entire design is working correctly and optimized for area, frequency, and power can the researchers utilize this design for its intended use: compression acceleration. This means potentially months of work, expensive FPGAs for testing or clusters for simulation, and redundant work, often implementing the same algorithms that have already been created many times.
+
+It is clear that there is a need for open-source compression and decompression hardware designs. Existing open-source hardware designs have high latencies, are not very configurable, or are made for a very specific purpose. These designs intend to have low latencies, be extremely configurable, and to be able to be used for many purposes. By open-sourcing this work under the MIT license, anyone will be able to  use it, opening the door for people who are interested in using hardware compressors and decompressors to do so without needing to implement the hardware themselves. By providing designs that have already been implemented and verified, this work has the potential to save thousands of hours of wasted engineering time for those in the field of hardware compression and decompression. In the same way that Linux or GCC are often the default choices for operating system or compiler, it is hoped that this work will become the default choice for hardware compression and decompression.
+
 \section{Existing Hardware Compressors and Decompressors}\label{se:existing_hardware_compressors_and_decompressors}
 This section discusses existing hardware accelerators that contain matching compressors and decompressors.
 
@@ -363,16 +377,6 @@ Microsoft implements a compressor and decompressor capable of Deflate \cite{micr
 
 Microsoft also implements its own Xpress9 compression algorithm \cite{xpress9}. Xpress9 is very similar to Deflate, with an LZ77 stage and a Huffman stage. This design is intended to accelerate file compression and decompression in large-scale storage servers. Like Microsoft's other compressor and decompressor, this design processes multiple bytes in parallel to improve the bandwidth of the design. However, unlike Microsoft's Deflate implementation, the Xpress9 design uses a Nios II FPGA soft-core to compute the Huffman encoding. 7 of this design on an FPGA are able to support up to 128 threads of data at 2.4Gbps.
 
-
-\chapter{Open-Source Motivation}\label{ch:open-source_motivation}
-The movement for open-source software has been gaining momentum over the past several decades. Linux is used by most of the internet, the cloud, supercomputers, and even in Android phones and Chromebooks. GCC and LLVM, open-source compiler projects, are widely used. Companies like Amazon, Facebook, Google, Microsoft, and Mozilla are releasing open-source libraries, languages, and tools.
-
-This makes it easy to perform research, because if one is interested in a kernel optimization, they can implement it in the Linux kernel. If one is interested in a virtual memory feature, or a scheduler improvement, or fixing a filesystem bug, these can all be done without building an entire operating system from scratch. In the same way, if one is interested in a compiler optimization, they can implement it in GCC or LLVM without buildling an entire compiler. If one is interested in scientific computing, simulation, animation, or machine learning, there are open-source tools that form a strong starting point so one does not need to create these from nothing every time.
-
-However, until recently, hardware has not enjoyed nearly the same scale of openness and work sharing that software has. As in many hardware domains, there are very few hardware compressors and decompressors that are open-source. This means that, every time a researcher is interested in a new advancement in compression or decompression, they must first implement it in hardware, then test it and debug it. Only when the entire design is working correctly and optimized for area, frequency, and power can the researchers utilize this design for its intended use: compression acceleration. This means potentially months of work, expensive FPGAs for testing or clusters for simulation, and redundant work, often implementing the same algorithms that have already been created many times.
-
-It is clear that there is a need for open-source compression and decompression hardware designs. Existing open-source hardware designs have high latencies, are not very configurable, or are made for a very specific purpose. These designs intend to have low latencies, be extremely configurable, and to be able to be used for many purposes. By open-sourcing this work under the MIT license, anyone will be able to  use it, opening the door for people who are interested in using hardware compressors and decompressors to do so without needing to implement the hardware themselves. By providing designs that have already been implemented and verified, this work has the potential to save thousands of hours of wasted engineering time for those in the field of hardware compression and decompression. In the same way that Linux or GCC are often the default choices for operating system or compiler, it is hoped that this work will become the default choice for hardware compression and decompression.
-
 \chapter{Open-Source Hardware Solutions} \label{ch:open-source_hardware_solutions}
 This chapter reviews the contributions of this work. It contains arguments for what makes the work valuable and details about how the work was implemented. It also discusses the high-level design choices and the reasons they were made.
 
@@ -380,7 +384,7 @@ This chapter reviews the contributions of this work. It contains arguments for w
 My work is comprised of three separate pairs of open-source, parameterized compressors and decompressors. The whole work is open-source under the MIT license, so it can be reused. All designs in the work are also entirely parameterized to allow for easy configuration. The first set of compressors and decompressors implements a heavily modified Huffman encoding, the second implements a very slightly modified LZW, and the last implements a modified LZ77.
 
 \subsection{Open-Source}\label{ss:open-source}
-As was discussed in Chapter \ref{ch:open-source_motivation}, there is a clear need for more open-source hardware compressor and decompressor designs. This is especially true for low-latency designs. For this reason, all of the designs, scripts, and workflow for this work will be open-sourced under the MIT license. The MIT license gives nearly unlimited freedom to any group or individual to use, modify, or sell the designs in any way they may desire.
+As was discussed in Section \ref{se:open-source_motivation}, there is a clear need for more open-source hardware compressor and decompressor designs. This is especially true for low-latency designs. For this reason, all of the designs, scripts, and workflow for this work will be open-sourced under the MIT license. The MIT license gives nearly unlimited freedom to any group or individual to use, modify, or sell the designs in any way they may desire.
 
 In the spirit of open-source, all of the tools used to debug, test, and simulate the work are fully open-source as well. This means that anyone can recreate nearly every aspect of this work for free, without paying for any expensive licenses. The only proprietary software used by this work is the Synopsys Design Compiler, which was used for synthesis of the design to find frequency and area estimates. Although there are currently open-source projects targeting synthesis, they were still in development when this work was started, so they were not considered.
 
@@ -703,27 +707,27 @@ The LZW decompressor works in much the same way as the compressor, minus the cha
 
 For each sequence that is not the maximum length, it and the first character of the following sequence are added to the dictionary. This makes sure that the LZW decompressor's dictionary stays in sync with the dictionary of the compressor. Unlike the LZW compressor, there is no need for a stop signal to send the final bytes of data, so once the input data is exhausted, all the output data will be transmitted as well.
 
-\chapter{Methodology} \label{ch:methodology}
+\section{Testing Methodology}\label{se:methodology}
 This chapter discusses the methodology that was used to generate data about the designs in this work. It also contains details about the ways existing designs can be compared to this work.
 
-\section{Hardware Synthesis}\label{se:hardware_synthesis}
+\subsection{Hardware Synthesis}\label{ss:hardware_synthesis}
 All designs were implemented with the ASAP7 7nm Predictive PDK with the Synopsys Design Compiler. First, designs were synthesized with a target clock period of 10 picoseconds. The synthesis tools will fail to meet this unreasonable expectation, but the negative slack from this synthesis run can be used to find the fastest possible clock speed and the area usage of the design at this speed. A second run at the correct maximum clock speed can then be used to find power information, if desired.
 
-\section{IBM Area Estimation}\label{se:ibm_area_estimation}
+\subsection{IBM Area Estimation}\label{ss:ibm_area_estimation}
 Unfortunately, in \cite{ibm}, IBM does not provide exact area numbers for the compression and decompression acceleration engine. However, \cite{wikichip-ibm-area} has a die photograph and area estimation for a POWER9 CPU. Using this and the claim that the acceleration engine took up less than 0.5\% of the entire chip's area, the area of the acceleration engine can be approximated. 
 
-\section{Compression Ratio Comparison}\label{se:compression_ratio_comparison_methodology}
+\subsection{Compression Ratio Comparison}\label{ss:compression_ratio_comparison_methodology}
 To compare memory compression ratios of the hardware designs with existing software implementations, memory dumps were taken randomly during benchmarks from SPEC, Sparkbench, Parsec, and other benchmarks. These memory dumps were then parsed into 4 KB pages of memory. These pages were randomly sampled and compressed and decompressed with Gzip (which uses Deflate), and the hardware designs from this work. Although no hardware Deflate compressor or decompressor exists as part of this work, the pages were also compressed and decompressed with LZ77 and Huffman sequentially to demonstrate the difference between software and hardware implementations of the same algorithm.
 
 The goal of this compression ratio comparison was to determine how much effective RAM could be achieved with memory compression using each design. Because of this, all pages that compressed to larger than 4 KB were treated as being exactly 4 KB for the average compression ratio calculation, as an incompressible page would remain in an uncompressed form during normal OS memory compression.
 
-\section{Latency}\label{se:latency}
+\subsection{Latency}\label{ss:latency}
 To calculate software compression latency, Gzip was timed compressing several thousand 4 KB memory dump pages in a row, then the time was divided by the number of pages. This was done because a single compression often occurs too quickly to accurately time, so multiple sequential compression operations were needed.
 
 For hardware latency calculations, the latency can be found by multiplying the fastest possible clock period of each design with the number of cycles required to complete compression or decompression with the design. 
 
 \chapter{Results and Analyses} \label{ch:results}
-This chapter delivers the results of the investigations detailed in Chapter \ref{ch:methodology} and analyzes them.
+This chapter delivers the results of the investigations detailed in Section \ref{se:methodology} and analyzes them.
 
 \section{ASIC Area and Frequency Comparison}\label{se:asic_area_and_frequency_comparison}
 Figure \ref{fig:maximum_clock_speeds} shows the highest clock speeds achievable by each design configuration. As can be seen, most of the designs are capable of achieving at least 2 GHz, except for the LZ77 compressor and the LZW decompressor. The reason for the LZ77 compressor's lower than expected clock speed is not currently known. Initial investigations into the clock speed by dividing the design up and synthesizing it as separate pieces suggest that the reduction in clock speed is not due to the CAM or pattern search module, so must be due to the state machine. However, the state machine does not contain much additional logic, so it is currently unclear what components cause the slowdown.
@@ -735,7 +739,7 @@ The authors of \cite{ibm} do not discuss the specifics of the clock speeds attai
 \begin{figure}[htb]
 	\centering
 	\includegraphics[scale=0.6]{Maximum Clock Speeds.png}
-	\caption{Maximum Clock Speeds}
+	\caption{Open-Source Compressor and Decompressor Maximum Clock Speed Comparison}
 	\label{fig:maximum_clock_speeds}
 \end{figure}
 
@@ -745,14 +749,14 @@ The designs in this work also achieve much lower areas than the IBM work. Figure
 
 \begin{figure}[htb]
 	\centering
-	\includegraphics[scale=0.29]{Design Configuration Area Comparison.png}
-	\caption{Design Configuration Area Comparison}
+	\includegraphics[scale=0.285]{Design Configuration Area Comparison.png}
+	\caption{Parameterized Design Area Configurability Demonstration}
 	\label{fig:design_configuration_area_comparison}
 \end{figure}
 \begin{figure}[htb]
 	\centering
 	\includegraphics[scale=0.6]{Synthesized Area Results.png}
-	\caption{Synthesized Area Results}
+	\caption{Compressor and Decompressor 7 nm Design Area Comparison}
 	\label{fig:synthesized_area_results}
 \end{figure}
 \begin{figure}[htb]
