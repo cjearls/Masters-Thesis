@@ -205,16 +205,20 @@ Finally, once each of the leaf nodes has been given an encoding, the second pass
 To decode Huffman-encoded data, only the original Huffman tree is needed. Then, the decompressor can simply traverse the Huffman tree for each bit in the encoded data, stopping and starting from the root node every time it reaches a leaf. Including the original Huffman tree with the compressed data can have a significant impact on the compression ratio. To combat this impact, most Huffman compression implementations represent the tree in a canonical form. A canonical Huffman tree represents the data as the number of characters of each depth, then lists the characters in order from the lowest depth to the highest depth. Canonical form is one of the most efficient ways of representing the Huffman tree, and it can be several times smaller than an equivalent tree represented in `plain-text' form, listing each character, the length of its encoding, and the encoding itself.
 
 \subsubsection{Example}\label{sss:huffman_example}
-For the purposes of demonstration, the string of characters being compressed for Huffman are shown in Figure \ref{fig:examplehuffmanstring}.
+For the purposes of demonstration, the string of characters being compressed for Huffman are shown in Table \ref{tab:huffman_encoding_example}.
 
-\begin{figure}[htb]
+\begin{table}[htb]
 	\centering
-    \begin{lstlisting}
-A,A,A,B,A,A,C,B,B,A,A,B,D,A,A,B
-    \end{lstlisting}
-	\caption{Example Huffman Input for Compression}
-	\label{fig:examplehuffmanstring}
-\end{figure}
+	\caption{Huffman Compressed and Uncompressed Example String}
+	\begin{tabular}{ccccccccccccccccc}
+	    \toprule
+	    Uncompressed & A & A & A & B & A & A & C & B & B & A & A & B & D & A & A & B\\
+	    \midrule
+	    Compressed & 0 & 0 & 0 & 10 & 0 & 0 & 110 & 10 & 10 & 0 & 0 & 10 & 111 & 0 & 0 & 10 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:huffman_encoding_example}
+\end{table}
 
 Without using Huffman encoding, each of these characters could be encoded with only two bits. An example of the encodings that could be used to do this is shown in Table \ref{tab:default_encoding}. Because there are 16 characters in the example, it would require a total of 32 bits to encode this data.
 
@@ -288,40 +292,26 @@ Once the Huffman tree is completed, the standard Huffman algorithm is nearly fin
 	\label{tab:huffman_encodings}
 \end{table}
 
-Now, the only task remaining is to encode each character using the codewords shown in Table \ref{tab:huffman_encodings}. The result of the final character encoding step is shown below in Figure \ref{fig:finalcharacterencodingresult}. Underscores are used to demonstrate separation between each character for the clarity of the reader. However, it is important to note that delimiters of any kind are unnecessary for Huffman encoding, because every character is a leaf node, so there is no way to mistake the meaning of a sequence of bits.
+Now, the only task remaining is to encode each character using the codewords shown in Table \ref{tab:huffman_encodings}. The result of the final character encoding step is shown below in Table \ref{tab:huffman_encoding_example}.
 
-\begin{figure}[htb]
+The resulting bit sequence shows a significant number of bits have been saved. The original encoding would have required 32 bits, but this version only needs 25 bits. This simple example results in a compression ratio ($\frac{initial data size}{compressed data size}$) of 1.28. This is unusually short compared to how Huffman compression would normally be used, so adding the storage overhead from the Huffman tree will remove any compression benefits from Huffman compression. However, for completeness' sake, both a canonical and a plain text Huffman tree example are demonstrated below.
+
+For a canonical Huffman tree, there are many methods of encoding the data. The simple way that is shown here first lists the number of each character at each depth, then lists each character in order from shallowest to deepest. Because this example uses only four characters, the deepest a leaf node could go in a Huffman tree is a depth of 3. For each depth of the Huffman tree, the number of bits needed to represent the number of characters at that depth is $1+depth$. Because the Huffman tree can have characters at a depth of up to three, to represent all the depths, the first part of the canonical Huffman tree is as follows: two bits for the number of 1-bit characters, three bits for the number of 2-bit characters, and four bits for the number of 3-bit characters. This sums to a subtotal of nine bits for the depths of the canonical Huffman tree. After the depths, each character is listed. Because the characters can be represented uncompressed as 2-bit values, the character section of the canonical Huffman tree can be anywhere from two to eight bits, depending  on how many characters are in the Huffman tree. Table \ref{tab:huffman_canonical_and_plain_text_comparison} below is the binary representation of the canonical Huffman tree of the encodings in Table \ref{tab:huffman_encodings}. Note, this encoding is seventeen bits, while the compressed version of the data only saved seven bits, resulting in an increase in size of ten bits.
+
+\begin{table}[htb]
 	\centering
-    \begin{lstlisting}
-0_0_0_10_0_0_110_10_10_0_0_10_111_0_0_10
-    \end{lstlisting}
-	\caption{Final Character Encoding Result}
-	\label{fig:finalcharacterencodingresult}
-\end{figure}
+	\caption{Huffman Canonical and Plain Text Tree Comparison}
+	\begin{tabular}{ccccccccccccccccccccccccccccc}
+	    \toprule
+	    HC & 0 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 1 & & & & & & & & & & \\
+	    \midrule
+	    HPT & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 1 & 1 & 1 & 1 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:huffman_canonical_and_plain_text_comparison}
+\end{table}
 
-The resulting bit sequence shows a significant number of bits have been saved. The original encoding would have required 32 bits, but this version only needs 25 bits. This simple example results in a compression ratio ($\frac{initial data size}{compressed data size}$) of 1.28. This simple example is unusually short compared to how Huffman compression would normally be used, so adding the storage overhead from the Huffman tree will remove any compression benefits from Huffman compression. However, for completeness' sake, both a canonical and a plain text Huffman tree example are demonstrated below.
-
-For a canonical Huffman tree, there are many methods of encoding the data. The simple way that is shown here first lists the number of each character at each depth, then lists each character in order from shallowest to deepest. Because this example uses only four characters, the deepest a leaf node could go in a Huffman tree is a depth of 3. For each depth of the Huffman tree, the number of bits needed to represent the number of characters at that depth is $1+depth$. Because of the Huffman tree can have characters at a depth of up to three, to represent all the depths, the first part of the canonical Huffman tree is as follows: two bits for the number of 1-bit characters, three bits for the number of 2-bit characters, and four bits for the number of 3-bit characters. This sums to a subtotal of nine bits for the depths of the canonical Huffman tree. After the depths, each character is listed. Because the characters can be represented uncompressed as 2-bit values, the character section of the canonical Huffman tree can be anywhere from two to eight bits, depending  on how many characters are in the Huffman tree. Figure \ref{fig:huffman_canonical} below is the binary representation of the canonical Huffman tree of the encodings in Table \ref{tab:huffman_encodings}. Note, this encoding is seventeen bits, while the compressed version of the data only saved seven bits, resulting in an increase in size of ten bits.
-
-\begin{figure}[htb]
-	\centering
-    \begin{lstlisting}
-01_001_0010_00_01_10_11
-    \end{lstlisting}
-	\caption{Huffman Canonical Tree Example}
-	\label{fig:huffman_canonical}
-\end{figure}
-
-A plain text Huffman tree is very simple to implement. The most basic method is to represent each character as the number of bits in its encoding, the encoding itself, and the uncompressed character. The current example requires two, three, and two bits for the number of bits, the encoding, and the uncompressed character, respectively. For four characters, that means the plain text form will take up 28 bits, significantly more than the canonical encoding. If the Huffman tree didn't use a character, this is demonstrated by setting its encoding length value to zero for the plain text representation. Figure \ref{fig:huffman_plain_text} below is the plain text representation of the encodings in Table \ref{tab:huffman_encodings}.
-
-\begin{figure}[htb]
-	\centering
-    \begin{lstlisting}
-01_000_00_10_010_01_11_110_10_11_111_11
-    \end{lstlisting}
-	\caption{Huffman Plain Text Tree Example}
-	\label{fig:huffman_plain_text}
-\end{figure}
+A plain text Huffman tree is very simple to implement. The most basic method is to represent each character as the number of bits in its encoding, the encoding itself, and the uncompressed character. The current example requires two, three, and two bits for the number of bits, the encoding, and the uncompressed character, respectively. For four characters, that means the plain text form will take up 28 bits, significantly more than the canonical encoding. If the Huffman tree didn't use a character, this is demonstrated by setting its encoding length value to zero for the plain text representation. Table \ref{tab:huffman_canonical_and_plain_text_comparison} below is the plain text representation of the encodings in Table \ref{tab:huffman_encodings}.
 
 More details on Huffman encoding and canonical Huffman trees can be found in \cite{huffman, canonicalhuffman}.
 
@@ -332,32 +322,27 @@ LZ77-based algorithms provide a solution to the shortcomings of Huffman encoding
 
 For LZ77 compression, a sliding window of a fixed size stores the past history of the compressor. As characters are fed into the compressor, the compressor checks to see if each sequence of characters it receives already exists in the sliding window. If it does, instead of representing the characters as literal characters, it represents them as a pointer-length pair. This pair contains both a pointer to the starting position of a character sequence in the sliding window and the length of the matching character sequence. In this way, even very large sequences of repeated data can be compressed down to only a few bytes.
 
-When LZ77 data is decompressed, the decompressor also keeps track of a sliding window of the data that has been decompressed. Whenever the decompressor receives a pointer-length pair, the decompressor looks up the pointer and reads a number of characters after it equal to the length of the pair. A benefit of this encoding is that it does not require sharing any metadata between the compressor and decompressor, they both automatically build up identical histories as they process the data.
+When LZ77 data is decompressed, the decompressor also keeps track of a sliding window of the data that has been decompressed. Whenever the decompressor receives a pointer-length pair, the decompressor looks up the pointer and reads a number of characters after the pointer equal to the length of the pair. This encoding does not require sharing any metadata between the compressor and decompressor, they both automatically build up identical histories as they process the data.
 
 \subsubsection{Example}\label{sss:lz77_example}
-The LZ77 example will use the string shown in Figure \ref{fig:lz77_example_text} to demonstrate the result of LZ77 compression. As with the Huffman example, the characteristics of the example like the compression ratio are not necessarily indicative of the average compression ratio that is achieved by LZ77 on most inputs. However, the example is useful for demonstrating the general format of an LZ77 implementation.
+The LZ77 example will use the string shown in Table \ref{tab:lz77_compressed_and_uncompressed} to demonstrate the result of LZ77 compression. As with the Huffman example, the characteristics of the example like the compression ratio are not necessarily indicative of the average compression ratio that is achieved by LZ77 on most inputs. However, the example is useful for demonstrating the general format of an LZ77 implementation.
 
-Figure \ref{fig:lz77_compressed_text} shows an example of compressing the example text with LZ77. Each bracketed entry represents a character pattern that has already occurred in the history and that is three characters or longer. Three characters was chosen because this work requires at least three characters in a pattern for the pattern encoding to be less than or equal to the length of the pattern itself. Other variants of LZ77, like LZ4, choose four characters for this cutoff, but the same principles still apply \cite{lz4}.
+Table \ref{tab:lz77_compressed_and_uncompressed} also shows an example of compressing the example text with LZ77. Each bracketed entry represents a character pattern that has already occurred in the history and that is three characters or longer. Three characters was chosen because this work requires at least three characters in a pattern for the pattern encoding to be less than or equal to the length of the pattern itself. Other variants of LZ77, like LZ4, choose four characters for this cutoff, but the same principles still apply \cite{lz4}.
 
-Each pattern shown in Figure \ref{fig:lz77_compressed_text} follows the form \{pattern starting index, number of characters\}. So, for example, \{3,6\} represents the pattern starting at index three that is six characters long: ` quick'.
+Each pattern shown in the comrpessed data of Table \ref{tab:lz77_compressed_and_uncompressed} follows the form \{pattern starting index, number of characters\}. So, for example, \{3,6\} represents the pattern starting at index three that is six characters long: ` quick'.
 
-\begin{figure}[htb]
+\begin{table}[htb]
 	\centering
-    \begin{lstlisting}
-The quick brown fox jumps over the lazy dog. The brown fox is very quick, and the lazy dog's nap is over.
-    \end{lstlisting}
-	\caption{LZ77 Example Text}
-	\label{fig:lz77_example_text}
-\end{figure}
-
-\begin{figure}[htb]
-	\centering
-    \begin{lstlisting}
-The quick brown fox jumps over the lazy dog. {0,4}{10,10}is very{3,6}, and{30,13}'s nap is{24,5}.
-    \end{lstlisting}
-	\caption{LZ77 Compressed Text}
-	\label{fig:lz77_compressed_text}
-\end{figure}
+	\caption{LZ77 Compressed and Uncompressed Example}
+	\begin{tabular}{cp{0.8\linewidth}}
+	    \toprule
+	    Uncompressed & The quick brown fox jumps over the lazy dog. The brown fox is very quick, and the lazy dog's nap is over.\\
+	    \midrule
+	    Compressed & The quick brown fox jumps over the lazy dog. \{0,4\}\{10,10\}is very\{3,6\}, and\{30,13\}'s nap is\{24,5\}.\\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:lz77_compressed_and_uncompressed}
+\end{table}
 
 \subsection{LZW}\label{ss:lzw}
 LZ78-based compression techniques such as LZW instead use an algorithm published by Lempel and Ziv in 1978, after their first seminal paper on compression \cite{lz78}. Like LZ77, LZ78 works by representing sequences of characters as references, but instead of representing them as pointer-length pairs, LZ78 represents references as dictionary entries. These dictionary entries are built by the compressor and rebuilt by the decompressor as the data is read, so there is no need to transmit a dictionary separately.
@@ -366,12 +351,12 @@ LZW is a modification of LZ78 published by Terry Welch in 1984 \cite{lzw}. LZW w
 
 When compressing with LZW, every sequence of inputs is added to a dictionary. Initially, the dictionary contains as many entries as there are possible unique characters. Then, as data is streamed through the LZW compressor, it adds entries to the dictionary. Anytime a sequence of two or more characters is no longer able to be found in the dictionary, it is added to the dictionary, and the sequence of characters starts from the final character in the sequence that caused it to not match any existing entries. This continues for all of the input characters, and then each character output from the dictionary must be the number of bits required to represent the number of entries in the dictionary. This means that as the dictionary gets longer, the length of each output of the compressor also gets larger to allow it to represent all the valid indices in the dictionary. More information and examples of LZW can be found in Welch \cite{lzw}.
 
-LZW was implemented in this work as an alternative to LZ77 for combining with Huffman to make a hardware Deflate accelerator. However, this idea was not utilized, because LZW and Huffman do not work well together for any tested memory compression workloads. Despite this, because LZW was already implemented, it will be included with the other compressors and decompressors in this work due to its area efficiency and simplicity.
+LZW was implemented in this work as an alternative to LZ77 for combining with Huffman to make a hardware Deflate accelerator. However, this idea was not utilized, because LZW + Huffman performance was worse than either in isolation for all of the tested memory compression workloads. Despite this, because LZW was already implemented, it will be included with the other compressors and decompressors in this work due to its area efficiency and simplicity.
 
 \subsection{Deflate}\label{ss:deflate}
 Deflate is a combination of LZ77 and Huffman encoding \cite{deflate}. First, byte-aligned LZ77 compression is performed on the input data. Next, this result is compressed with Huffman. To decompress, Huffman decompression is first applied, followed by LZ77 decompression. By combining these two algorithms, Deflate is able to take advantage of both the pattern matching of LZ77 and the improvements in character representation of Huffman encoding. Because it takes advantage of both, its compression ratios are higher than either individually. These high compression ratios make it a good candidate for memory compression.
 
-Deflate's simplicity compared to Zstandard and its high compression ratios are the reasons this work implemented LZ77 and Huffman hardware accelerators. The LZ77 and Huffman hardware accelerators can be combined to implement a Deflate accelerator, improving compression ratios significantly.
+Deflate's high compression ratios and Deflate's use of LZ77 and Huffman compression are the motivation for this work implementing LZ77 and Huffman hardware accelerators. The LZ77 and Huffman hardware accelerators can be combined to implement a Deflate accelerator, improving compression ratios significantly.
 
 \section{Open-Source Hardware}\label{se:open-source_motivation}
 Some of the most successful, widely-used software in the world is open-source. In listing some of the most popular open-source projects, Fitzgerald lists some of the largest ever software projects: the Linux kernel, the Apache web server, the Firefox and Chromium browsers, the GNU C compiler, the Perl and Python scripting languages, and MySQL \cite{oss2.0}. These each revolutionized their fields, becoming some of the most popular tools in existence, even to this day.
