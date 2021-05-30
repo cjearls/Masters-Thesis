@@ -179,15 +179,15 @@ To discuss hardware compression accelerators, it is first useful to have an unde
 The algorithms discussed in this section are LZO, LZ4, Zstandard, Huffman, LZ77, LZW, and Deflate. This discussion is in preparation for discussion of hardware accelerators for these algorithms in Section \ref{se:existing_hardware_compressors_and_decompressors}.
 
 \subsection{LZO}\label{ss:lzo}
-LZO is a unique compression algorithm in that no official public specification is available for it. Only the source code and an attempt at documenting it in the Linux kernel can be used to find information about the algorithm \cite{linuxlzo}. However, there is still enough information to gain a simple understanding of its characteristics. LZO is a variation on LZ77 compression by Markus Oberhumer. Its goal was to be faster than Deflate compression software like Gzip, which uses Deflate \cite{lzo}. LZO accomplishes this goal, but at the cost of lower compression ratios. This is partially due to its lack of Huffman encoding, which Deflate includes. More information about LZ77 is included in Subsection \ref{ss:lz77}.
+LZO is a unique compression algorithm in that no official public specification is available for it. Only the source code and an attempt at documenting it in the Linux kernel can be used to find information about the algorithm \cite{linuxlzo}. However, there is still enough information to gain a simple understanding of its characteristics. LZO is a variation on LZ77 compression by Markus Oberhumer. Its goal was to be faster than Deflate compression software like Gzip, which uses Deflate \cite{lzo}. LZO accomplishes this goal, but at the cost of lower compression ratios. This is partially due to its lack of Huffman encoding, which Deflate includes. More information about LZ77 is included in Section \ref{ss:lz77}.
 
 \subsection{LZ4}\label{ss:lz4}
 LZ4, like LZO, is based on the LZ77 compression algorithm. It encodes data in a byte-aligned manner. This allows its outputs to be compatible as inputs to algorithms like Huffman compression, discussed in \ref{ss:huffman_encoding}.
 
-Each block of LZ4-compressed data consists of a byte of metadata, a variable number of optional bytes of metadata based on the first byte, a number of literal bytes that are not compressed, and a compressed match \cite{lz4}. The metadata at the beginning of the block informs how long the literal data is and how long the match is. Once the literal data is added to the data history, the match index, found at the end of the block, can be combined with the metadata to match a sequence of characters in a row from the data history. This allows repeated patterns of characters to be re-used without being repeated multiple times, which is where the compression benefits come from. LZ4 is essentially a specific way to encode LZ77, which is discussed in Subsection \ref{ss:lz77}
+Each block of LZ4-compressed data consists of a byte of metadata, a variable number of optional bytes of metadata based on the first byte, a number of literal bytes that are not compressed, and a compressed match \cite{lz4}. The metadata at the beginning of the block informs how long the literal data is and how long the match is. Once the literal data is added to the data history, the match index, found at the end of the block, can be combined with the metadata to match a sequence of characters in a row from the data history. This allows repeated patterns of characters to be re-used without being repeated multiple times, which is where the compression benefits come from. LZ4 is essentially a specific way to encode LZ77, which is discussed in Section \ref{ss:lz77}
 
 \subsection{Zstandard}\label{ss:zstandard}
-It is one of two compression algorithms discussed in this paper that is a combination of existing algorithms. It combines LZ77 compression, Huffman encoding, and finite state entropy encoding \cite{zstd}. LZ77 compression, discussed in detail in Subsection \ref{ss:lz77}, is performed on the data first. Afterwards, literals that could not be compressed are compressed with Huffman encoding, described in Subsection \ref{ss:huffman_encoding}. The Huffman metadata and all other data is then compressed with finite state entropy encoding, which allows it to achieve very competitive compression ratios. However, because of this complexity, it is not often implemented in hardware. 
+It is one of two compression algorithms discussed in this paper that is a combination of existing algorithms. It combines LZ77 compression, Huffman encoding, and finite state entropy encoding \cite{zstd}. LZ77 compression, discussed in detail in Section \ref{ss:lz77}, is performed on the data first. Afterwards, literals that could not be compressed are compressed with Huffman encoding, described in Section \ref{ss:huffman_encoding}. The Huffman metadata and all other data is then compressed with finite state entropy encoding, which allows it to achieve very competitive compression ratios. However, because of this complexity, it is not often implemented in hardware. 
 
 \subsection{Huffman Encoding}\label{ss:huffman_encoding}
 Huffman encoding achieves minimum redundancy of data by giving characters of data variable lengths \cite{huffman}. The lengths of each encoding are determined by how frequently it appears in the data being compressed. Frequently-occurring data are assigned shorter encodings, and infrequently-occurring data are assigned longer encodings. In this way, data can be optimally encoded such that no two characters' representations could be swapped to achieve a shorter encoding result. 
@@ -368,19 +368,19 @@ Open-source hardware has a huge potential for success. The open-source RISC-V in
 Unfortunately, though, hardware has not seen the same proliferation of open-source designs. Between OpenCores.org and LibreCores.org, two open-source hardware hosting websites, there are less than 1000 projects. There are less than 2000 Verilog projects currently listed on GitHub. Despite the many academic hardware compression works found in Section \ref{se:existing_hardware_compressors_and_decompressors}, none of them are open-source.
 
 \section{Existing Hardware Compressors and Decompressors}\label{se:existing_hardware_compressors_and_decompressors}
-This section discusses existing hardware accelerators that contain matching compressors and decompressors.
+This section contains discussion of both proprietary and open-source ipmlementations of compressors and decompressors. The proliferation of proprietary implementations and the dearth of open-source frameworks for compression/decompression further motivate our approach.
 
 \subsection{Existing Memory Compressors and Decompressors}\label{ss:other_memory_compressors_and_decompressors}
-The goals of Compresso are similar to the goals of this work: enabling low-latency memory compression to increase effective memory size \cite{compresso}. However, because Compresso only compresses blocks of 64 bytes, it is only able to achieve compression ratios of 1.85x. This makes it unsuitable for aggressive compression of memory data.
+The goals of Compresso are similar to the goals of this work: enabling low-latency memory compression to increase effective memory size \cite{compresso}. However, because Compresso only compresses blocks of 64 bytes, it is only able to achieve compression ratios of 1.85. In this work's testing, even excluding outliers with compression ratios of 60x, Deflate compression ratios are 3.3 on average. Compresso's mediocre compression ratios make it unsuitable for aggressive compression of memory data.
 
 Like Compresso, IBM's MXT technology attempts to implement a low-latency memory compressor in hardware \cite{mxt}. Although MXT succeeds at this, it is only capable of compression ratios up to 2.68 in the best case shown, which severely limits its usefulness.
 
-Benini et al. utilize hardware acceleration for memory compression, but makes no mention of latency. Due to the use of embedded processors, though, it is likely that the latency is significant \cite{memorycompressionenergy}.
+Benini et al. utilize hardware acceleration for memory compression, but makes no mention of latency. However, Benini et al. mention that a future work is to implement LZ-like compressors due to their higher compression ratios \cite{memorycompressionenergy}. Although Benini et al. do not publish the compression ratios their design achieves, this suggests that it is significantly worse than LZ-based compression.
 
 Pekhimenko et al. implements a low-latency hardware compression accelerator for main memory, but compression results are significantly worse than either IBM's MXT hardware or LZ compression, both of which give significantly lower compression ratios than that of software Deflate \cite{linearcompression}.
 
 \subsection{Proprietary Compressor-Only Hardware}\label{proprietary_compressor-only_hardware}
-This subsection discusses proprietary hardware accelerators that only implement the compressor, relying on software to perform the decompression.
+This section discusses proprietary hardware accelerators that only implement the compressor, relying on software to perform the decompression.
 
 \subsubsection{ASIC Designs}\label{sss:asic_compressor_designs}
 Lee et al. verify an LZ4 compressor design in an FPGA, then fabricate it on a 65 nm process node \cite{hardwarelz4}. However, this design can only compress patterns as large as 31 bytes, which limits the compression ratios that it can achieve.
@@ -392,20 +392,20 @@ Abdelfattah et al. use OpenCL to implement GZIP on an Altera FPGA \cite{gziponac
 
 Luo et al. implement a multi-core GZIP compressor for use with the Hadoop Distributed File System \cite{hdfsgzip}. This work uses static Huffman encoding. The hardware implementation enables a speedup of 70x compared to software compression, which doubles the performance of HDFS.
 
-Identifying CPU-FPGA communication speed limits FPGA compressors, Qiao et al. implement a high-throughput Deflate compression accelerator \cite{fpgadeflate}. Their design uses the extremely high-speed communication of Intel's HARPv2 platform to overcome existing communication bottlenecks for FPGAs. Like many other compressors, they modify the hash table to allow it to work in parallel and use a static Huffman tree to allow Huffman to easily pipeline with the LZ77 compressor.
+To address CPU-FPGA communication speed limits on FPGA compressors, Qiao et al. implement a high-throughput Deflate compression accelerator \cite{fpgadeflate}. Their design uses the extremely high-speed communication of Intel's HARPv2 platform to overcome existing communication bottlenecks for FPGAs. Like many other compressors, they modify the hash table to allow it to work in parallel and use a static Huffman tree to allow Huffman to easily pipeline with the LZ77 compressor.
 
 Ribeiro implements an LZ77 compressor and a static Huffman encoder on an FPGA with a general-purpose CPU that passes data between them and manages them \cite{ribeiro}. The CPU of the Zynq devices that the design is implemented on limits the work to 123 MiB/s, and achieves a speedup of 1.5x over the Zynq ARM processor alone.
 
 \subsection{Proprietary Decompressor-Only Hardware}\label{ss:proprietary_decompressor-only_hardware}
-Ledwon et al. implements the only work relevant work to include a Deflate decompressor without a matching compressor \cite{deflatedecompression}. Ledwon et al. implement their work in C++ and synthesize it with Xilinx's high-level synthesis tools. The decompressor is fully Deflate-compliant, so it supports many features that are often deemed unnecessary for hardware compressors or decompressors.
+To the best of my knowledge, Ledwon et al. implement the only relevant work to include a Deflate decompressor without a matching compressor \cite{deflatedecompression}. Ledwon et al. implement their work in C++ and synthesize it with Xilinx's high-level synthesis tools. Because their work is implemented in software, their decompressor supports the full Deflate specification. This is uncommon in other hardware designs due to the complexity of implementing the full specification in hardware.
 
 \subsection{Open-Source Hardware Compressors and Decompressors}\label{ss:open-source_hardware_compressors_and_decompressors}
-This subsection discusses open-source hardware accelerators that have a matching compressor and decompressor.
+This section discusses open-source hardware accelerators that have a matching compressor and decompressor.
 
 \subsubsection{FPGA Designs}\label{sss:open_fpga_designs}
 Nunez-yanez created the open-source X-MatchPROvw, implementing the XMatchPro compression algorithm \cite{xmatchpro}. This hardware compressor and decompressor is a dictionary-based pattern compression technique, and the design is capable of four bytes per cycle compression and decompression throughput.
 
-Vijlbrief implements a configurable Deflate compressor and decompressor designed for FPGAs \cite{hdldeflate}. However, this design requires multiple cycles per compressed or decompressed byte, so it is not suitable for low-latency compression and decompression of memory. Additionally, although the HDL-deflate design is partially parameterized, it has many fewer `knobs' for parameterization than this work, as can be seen in Figure \ref{fig:open-source_parameterization_comparison}.
+Vijlbrief implements a configurable Deflate compressor and decompressor designed for FPGAs \cite{hdldeflate}. However, this design requires multiple cycles per compressed or decompressed byte, so it is not suitable for low-latency compression and decompression of memory. Additionally, although the HDL-deflate design is partially parameterized, it has many fewer `knobs' for parameterization than this work, as can be seen in Figure \ref{fig:open-source_parameterization_comparison}. Note that, because this work does not implement a Deflate design by combining the LZ77 designs and Huffman designs, the hypothetical Deflate shown in Figure \ref{fig:open-source_parameterization_comparison} uses the sums of the parameters of the Huffman and LZ77 designs.
 
 \begin{figure}[htb]
 	\centering
@@ -415,12 +415,12 @@ Vijlbrief implements a configurable Deflate compressor and decompressor designed
 \end{figure}
 
 \subsection{Open-Source Compressor-Only Hardware}\label{ss:open-source_compressor-only_hardware}
-This subsection discusses open-source hardware accelerators that only implement the compressor. These rely on a software implementation of the decompression algorithm.
+This section discusses open-source hardware accelerators that only implement the compressor. These rely on a software implementation of the decompression algorithm.
 \subsubsection{FPGA Designs}\label{sss:open_fpga_compressor_designs}
 Schrittwieser implements a LZRW1 compressor core \cite{lzrw1}. This core requires two cycles per byte and does not have a matching decompressor, so it is not suitable for low-latency compression and decompression of memory.
 
 \subsection{Proprietary Complete Deflate-Like Hardware Compressors and Decompressors}\label{ss:complete_deflate-like_hardware_compressors_and_decompressors}
-This subsection discusses proprietary hardware compressors and decompressors that implement Deflate-like algorithms. For the purposes of this discussion, a Deflate-like algorithm is one that uses LZ77 compression followed by Huffman compression.
+This section discusses proprietary hardware compressors and decompressors that implement Deflate-like algorithms. For the purposes of this discussion, a Deflate-like algorithm is one that uses LZ77 compression followed by Huffman compression.
 
 \subsubsection{ASIC Designs}\label{sss:asic_designs}
 IBM created a Deflate compression and decompression engine that is included in both their POWER9 and z15 processors \cite{ibm}. IBM's implementation is capable of handling data at a rate of 8 bytes/clock, allowing for very high compression and decompression bandwidth \cite{ibm}. The IBM design uses completely accurate near-history CAM and a pseudo-CAM for the older sliding window history to limit CAM area. Additionally, IBM's Huffman encoder builds dynamic trees, unlike many other works that build in a static Huffman encoding to remove the required tree-building process.
@@ -601,7 +601,7 @@ The codeword generator is the final step in the design before the data can be en
 	\label{tab:codeword_generator_encodings}
 \end{table}
 
-The final module of the design uses the encodings from the codeword generator module to compress the input data. This module performs the final character encoding as discussed in the Huffman compression example in Subsection \ref{sss:huffman_example}. First, this module outputs the plain text form of the Huffman tree as specified in Section \ref{sss:huffman_compressor_design}. Once this is completed, the module accepts input data compress. This module can be configured to compress multiple streams from the input data in parallel. For each byte of each input stream, the corresponding encoding and encoding length is found from the codeword generator. Once this is found, the encoding and its length are output for each stream, resulting in a fully-encoded output.
+The final module of the design uses the encodings from the codeword generator module to compress the input data. This module performs the final character encoding as discussed in the Huffman compression example in Section \ref{sss:huffman_example}. First, this module outputs the plain text form of the Huffman tree as specified in Section \ref{sss:huffman_compressor_design}. Once this is completed, the module accepts input data compress. This module can be configured to compress multiple streams from the input data in parallel. For each byte of each input stream, the corresponding encoding and encoding length is found from the codeword generator. Once this is found, the encoding and its length are output for each stream, resulting in a fully-encoded output.
 
 \subsubsection{Decompressor}\label{sss:huffman_decompressor_implementation}
 
