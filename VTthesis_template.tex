@@ -684,11 +684,161 @@ This section of the paper describes the low-level implementation details of each
 
 The LZ77 compressor consists of two primary components: a pattern search module that uses a CAM to search for multi-character patterns in the byte history combinationally, and the state machine and logic that utilize the pattern search module to perform LZ77 compression.
 
-% TODO: hardware doesn't output wires, it has wires that it outputs values on
-% TODO: add a sentence describing not just the functional level, what the inputs and outputs of the CAM do, but HOW it calculates those things
-The pattern search module uses an internal multi-character CAM. This CAM receives data and writes it to a history and receives patterns of data to search for in the history. The CAM outputs multiple large arrays of wires. Each array corresponds to one of the characters in the pattern being searched, and each bit in the array corresponds to whether or not the character of the same index in the CAM matches the character corresponding to the array in the pattern search data. Additionally, the CAM provides an output that gives access to all of its stored data so that, when matches longer than `CAM max pattern length' are found, the state machine of the LZ77 compressor can check their true length.
+The pattern search module uses an internal multi-character CAM. This CAM receives data and writes it to a history and receives patterns of data to search for in the history. The CAM provies an output that gives access to all of its stored data so that, when matches longer than `CAM max pattern length' are found, the state machine of the LZ77 compressor can check their true length. The CAM also outputs multiple large arrays of wires. Each array corresponds to one of the characters in the pattern being searched. Each bit in an array shows whether or not its corresponding pattern character matches a character in the CAM's history. Table \ref{tab:cam_history_example} shows an example CAM history, and Table \ref{tab:pattern_search_example} shows an example pattern search input. Table \ref{tab:bit_array_output_example} demonstrates each bit array, its corresponding character in the pattern search input, and the value of each bit in each array with the CAM history included for easy reference.
 
-The pattern search module uses the output of the internal CAM to find patterns up to length `CAM max pattern length'. It does this by submitting a pattern to the CAM. The pattern search module performs a combinational left-shift on each array of matches from the CAM by its index, e.g. array 0 is shifted 0 bits, array 1 is shifted 1 bit, array 2 is shifted 2 bits, etc. Then, the pattern search module performs a bitwise AND on the results of the array shifts. As each additional array AND is performed, the remaining true values in the array correspond to the starting indices of patterns that match a number of characters. So, for instance, the bitwise AND of the shifted results of arrays 0, 1, 2, and 3 result in an array where each true value index corresponds to the starting index of a pattern that matches the first four characters of the pattern search data. Once all ANDs have been performed, the only remaining true values in the array are the indices of the starting points for patterns that matched the CAM input entirely. By reversing the resulting arrays of wires and using the Chisel3 lastIndexWhere() function, the first matching index of patterns of each length can be found \cite{chisel3, chisel3documentation}. The results of each of these lastIndexWhere() functions can be chosen by performing an AND reduction on each resulting array of wires in the bitwise AND operation previously described, and picking the longest pattern that returns a true value from this reduction.
+\begin{table}[htb]
+	\centering
+	\caption{CAM History Example}
+	\begin{tabular}{cc}
+	    \toprule
+	    History Index & Stored Character\\
+	    \midrule
+	    0 & A \\
+	    \midrule
+	    1 & D \\
+	    \midrule
+	    2 & B \\
+	    \midrule
+	    3 & C \\
+	    \midrule
+	    4 & D \\
+	    \midrule
+	    5 & C \\
+	    \midrule
+	    6 & C \\
+	    \midrule
+	    7 & D \\
+	    \midrule
+	    8 & B \\
+	    \midrule
+	    9 & C \\
+	    \midrule
+	    10 & A \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:cam_history_example}
+\end{table}
+
+\begin{table}[htb]
+	\centering
+	\caption{Pattern to Search For}
+	\begin{tabular}{cc}
+	    \toprule
+	    Index of Character in Pattern & Character to Match\\
+	    \midrule
+	    0 & D \\
+	    \midrule
+	    1 & B \\
+	    \midrule
+	    2 & C \\
+	    \midrule
+	    3 & A \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:pattern_search_example}
+\end{table}
+
+\begin{table}[htb]
+	\centering
+	\caption{Bit Array Output Example}
+	\begin{tabular}{p{0.1\linewidth}p{0.1\linewidth}p{0.1\linewidth}p{0.1\linewidth}p{0.1\linewidth}}
+	    \toprule
+	    Byte History Characters & Pattern Index 0 (D) Bit Array & Pattern Index 1 (B) Bit Array & Pattern Index 2 (C) Bit Array & Array Pattern Index 3 (A) Bit Array\\
+	    \midrule
+	    A & 0 & 0 & 0 & 1\\
+	    \midrule
+	    D & 1 & 0 & 0 & 0\\
+	    \midrule
+	    B & 0 & 1 & 0 & 0\\
+	    \midrule
+	    C & 0 & 0 & 1 & 0\\
+	    \midrule
+	    D & 1 & 0 & 0 & 0\\
+	    \midrule
+	    C & 0 & 0 & 1 & 0\\
+	    \midrule
+	    C & 0 & 0 & 1 & 0\\
+	    \midrule
+	    D & 1 & 0 & 0 & 0\\
+	    \midrule
+	    B & 0 & 1 & 0 & 0\\
+	    \midrule
+	    C & 0 & 0 & 1 & 0\\
+	    \midrule
+	    A & 0 & 0 & 0 & 1\\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:bit_array_output_example}
+\end{table}
+
+The pattern search module uses the output of the internal CAM to find patterns up to length `CAM max pattern length'. It does this by submitting a pattern to the CAM. The pattern search module performs a combinational left-shift on each array of matches from the CAM by its index, e.g. array 0 is shifted 0 bits, array 1 is shifted 1 bit, array 2 is shifted 2 bits, etc. Then, the pattern search module performs a bitwise AND on the results of the array shifts. As each additional array AND is performed, the remaining true values in the array correspond to the starting indices of patterns that match a number of characters. So, for instance, the bitwise AND of the shifted results of arrays 0, 1, 2, and 3 result in an array where each true value index corresponds to the starting index of a pattern that matches the first four characters of the pattern search data. Once all ANDs have been performed, the only remaining true values in the array are the indices of the starting points for patterns that matched the CAM input entirely. By reversing the resulting arrays of wires and using the Chisel3 lastIndexWhere() function, the first matching index of patterns of each length can be found \cite{chisel3, chisel3documentation}. The results of each of these lastIndexWhere() functions can be chosen by performing an AND reduction on each resulting array of wires in the bitwise AND operation previously described, and picking the longest pattern that returns a true value from this reduction. Table \ref{tab:shifted_bit_arrays} shows the result of the shifting operation for each bit array shown in Table \ref{tab:bit_array_output_example}. Table \ref{tab:pattern_detection_with_arrays} shows how the hardware AND's the shifted bit arrays together to detect a pattern. Table \ref{tab:pattern_detection_with_arrays} shows that a pattern up to three characters long was found at index 1, and a pattern up to four characters long was found at index 7. Because the longest pattern is chosen, the pattern search module would output the index 7 and the length 4 as the results of the pattern search.
+
+\begin{table}[htb]
+	\centering
+	\caption{Shifted Bit Arrays}
+	\begin{tabular}{p{0.12\linewidth}p{0.12\linewidth}p{0.12\linewidth}p{0.12\linewidth}p{0.12\linewidth}}
+	    \toprule
+	    Bit Array 0 Shifted 0 Bits & Bit Array 1 Shifted 1 Bit & Bit Array 2 Shifted 2 Bits & Bit Array 3 Shifted 3 Bits\\
+	    \midrule
+	    0 & 0 & 0 & 0 \\
+	    \midrule
+	    1 & 1 & 1 & 0 \\
+	    \midrule
+	    0 & 0 & 0 & 0 \\
+	    \midrule
+	    0 & 0 & 1 & 0 \\
+	    \midrule
+	    1 & 0 & 1 & 0 \\
+	    \midrule
+	    0 & 0 & 0 & 0 \\
+	    \midrule
+	    0 & 0 & 0 & 0 \\
+	    \midrule
+	    1 & 1 & 1 & 1 \\
+	    \midrule
+	    0 & 0 & 0 & 0 \\
+	    \midrule
+	    0 & 0 & 0 & 0 \\
+	    \midrule
+	    0 & 0 & 0 & 0 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:shifted_bit_arrays}
+\end{table}
+
+\begin{table}[htb]
+	\centering
+	\caption{Pattern Detection with Shifted Bit Arrays}
+	\begin{tabular}{p{0.1\linewidth}p{0.1\linewidth}p{0.15\linewidth}p{0.2\linewidth}p{0.2\linewidth}}
+	    \toprule
+	    Index & Array 0 & Arrays 0\&1 & Arrays 0\&1\&2 & Arrays 0\&1\&2\&3 \\
+	    \midrule
+	    0 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    1 & 1 & 1 & 1 & 0 \\
+	    \midrule
+	    2 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    3 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    4 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    5 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    6 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    7 & 1 & 1 & 1 & 1 \\
+	    \midrule
+	    8 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    9 & 0 & 0 & 0 & 0 \\
+	    \midrule
+	    10 & 0 & 0 & 0 & 0 \\
+	    \bottomrule
+	\end{tabular}
+	\label{tab:pattern_detection_with_arrays}
+\end{table}
+
 
 The state machine that controls compression stores the input data in a buffer. The buffer must be filled, and then each clock cycle, the buffer is checked against the pattern search module. If a pattern is of a length such that the number of characters to encode the pattern is less than or equal to the number of characters in the pattern, the pattern is compressed. Otherwise, the buffer shifts out the oldest character and shifts in a new character, then adds the old character to the byte history, and the old character is output as a literal character.
 
@@ -910,8 +1060,15 @@ Finally, it would be beneficial to create software libraries that are compatible
 
 % TODO: Dr. Cameron says probably at least another page needed here. Discuss broader implications, what can we do now that we couldn't previously, who can benefit, what can people do with this, give examples and numbers
 \chapter{Conclusions} \label{ch:conclusions}
-{\color{red} This still probably needs at least an additional page, but because the rest of the paper is still being modified, this is being saved until it is in a more complete state}
-As workloads continue to eat up more RAM, memory compression will continue to become an important cost-saving tool. Although the existing compression accelerators are able to significantly reduce the latency of compression and decompression, existing accelerators are several times slower than an uncompressed memory access. This work improves upon the existing state of the art by reducing the decompression latency by over an order of magnitude and 33\% in the best case and worst case, respectively. Additionally, this work does so while reducing the area by over an order of magnitude. Most importantly, this work is open-source under the MIT license, so it is available for future research groups to continue to improve upon and modify. If it is used, it has the potential to save researchers hundreds or thousands of hours of work re-implementing the same compression algorithms in hardware.
+As workloads continue to eat up more RAM, memory compression will continue to become an important cost-saving tool. Many of the benchmarks shown demonstrate compression ratios significantly higher than 2x. Existing compression and decompression accelerators are able to significantly reduce the latency of compression and decompression. However, existing accelerators add several times the latency of an uncompressed memory access.
+
+This work improves upon the existing state-of-the-art designs by reducing decompression latency by over an order of magnitude at best and by 33\% even in the worst possible case. With all of the designs in this work combined, it still utilizes nearly 8x less area than IBM's state-of-the-art implementation. This will lead to lower costs and higher yields for designs that utilize this work.
+
+This work is parameterized, making it suitable for a variety of use cases. It has the potential to be used anywhere from small microcontrollers to large warehouse-scale data centers. It is much more configurable than any existing designs, a feature which saved weeks or months during its implementation. This configurability also enables faster iteration, because design space exploration can be done in parallel without input from architects.
+
+Most importantly, the design is available for free under the MIT open-source license. This allows for any individual, corporation, or other entity to use, modify, or sell it free of charge. This will hopefully save future researchers hundreds of hours of development time, speed further research into memory compression, and result in stability, speed, and area improvements as bugs are found and fixed and the design is further optimized.
+
+The state-of-the-art designs in this work are the first of their kind to be open-sourced for the community to use, and their performance and configurability make them very easy to use in existing designs and modify for purposes out of the scope of this paper. This work will hopefully inspire other researchers to open-source their designs to reduce redundant work by the community and help improve the state of research for all.
 
 % This is the standard bibtex file. Do not include the .bib extension in <bib_file_name>.
 % Uncomment the following lines to include your bibliography: 
