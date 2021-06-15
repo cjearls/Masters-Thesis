@@ -298,7 +298,7 @@ frame=single,
     \noindent Thesis proposal for}
     {\ifbool{@prelim}
       {\noindent Preliminary Exam}
-      {\noindent Dissertation submitted to the Faculty of the \\
+      {\noindent Thesis submitted to the Faculty of the \\
         \@institution \\
         in partial fulfillment of the requirements for the degree of \\}
     }
